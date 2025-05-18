@@ -6,7 +6,8 @@
 	"type": "module",
 	"scripts": {
 		"dev": "nodemon --experimental-specifier-resolution=node index.js",
-		"swagger": "node src/configs/swagger.js"
+		"swagger": "node src/configs/swagger.js",
+		"seed": "node src/seeds/index.js"
 	},
 	"keywords": [
 		"nodejs",
@@ -16,6 +17,7 @@
 	"author": "hoangnm.ndm",
 	"license": "MIT",
 	"dependencies": {
+		"@faker-js/faker": "^9.8.0",
 		"bcrypt": "^5.1.1",
 		"cors": "^2.8.5",
 		"dotenv": "^16.4.7",

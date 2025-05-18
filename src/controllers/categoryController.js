@@ -2,9 +2,7 @@ import Category from "../models/category.js";
 import createError from "../utils/createError.js";
 import handleAsync from "../utils/handleAsync.js";
 
-// Lấy tất cả danh mục
 const getAllCategories = handleAsync(async (req, res) => {
-    const { includeDeleted } = req.query;
     let query = {};
     
     const categories = await Category.find(query);
@@ -16,4 +14,25 @@ const getAllCategories = handleAsync(async (req, res) => {
     });
 });
 
-export { getAllCategories };
+const createCategory = handleAsync(async (req, res, next) => {
+    const { category_name } = req.body;
+    
+    if (!category_name) {
+        return next(createError(400, "Tên danh mục là bắt buộc"));
+    }
+    
+    const existingCategory = await Category.findOne({ category_name });
+    if (existingCategory) {
+        return next(createError(400, "Danh mục này đã tồn tại"));
+    }
+    
+    const newCategory = await Category.create({ category_name });
+    
+    res.status(201).json({
+        success: true,
+        data: newCategory,
+        message: "Tạo danh mục mới thành công"
+    });
+});
+
+export { getAllCategories, createCategory };
