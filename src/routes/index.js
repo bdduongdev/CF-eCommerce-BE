@@ -1,27 +1,12 @@
-import { Router } from "express";
-import categoryRoutes from "./category.routes.js";
-// import productRoutes from "./product.routes.js";
+import express from "express";
+import categoryRoutes from "./categoryRoutes.js";
+import authRoutes from "./authRoutes.js";
+// Import các routes khác nếu có
 
-const routes = Router();
+const router = express.Router();
 
-routes.use("/categories", categoryRoutes);
-// routes.use("/products", productRoutes);
-// routes.use("/brands", brandRoutes);
-// routes.use("/sub-categories", subCategoryRoutes);
-// routes.use("/variants", variantRoutes);
-// routes.use("/auth", authRoutes);
+router.use("/categories", categoryRoutes);
+router.use("/auth", authRoutes);
+// Đăng ký các routes khác nếu có
 
-export default routes;
-
-// import express from "express";
-
-
-// import brandRoutes from "./brand.route.js";
-
-
-// const router = express.Router();
-
-
-// router.use("/brands", brandRoutes);
-
-// export default router;
+export default router;
