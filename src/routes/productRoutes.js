@@ -10,16 +10,13 @@ import {
 
 const router = express.Router();
 
-// Route công khai - ai cũng có thể truy cập
 router.get("/", getAllProducts);
-router.get("/:id", getProductById);
+router.get("/show/:id", getProductById);
 
-// Route yêu cầu đăng nhập
 router.use(verifyToken);
 
-// Route chỉ dành cho admin
-router.post("/", isAdmin, createProduct);
-router.put("/:id", isAdmin, updateProduct);
-router.delete("/:id", isAdmin, deleteProduct);
+router.post("/create", isAdmin, createProduct);
+router.put("/update/:id", isAdmin, updateProduct);
+router.delete("/delete/:id", isAdmin, deleteProduct);
 
 export default router;
