@@ -1,10 +1,8 @@
 import Category from "../models/category.js";
 import { faker } from '@faker-js/faker';
 
-// Hàm seed danh mục
 const seedCategories = async (count = 10) => {
   try {
-    // Xóa dữ liệu cũ
     await Category.deleteMany();
     console.log("Đã xóa dữ liệu Category cũ");
 

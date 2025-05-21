@@ -5,11 +5,9 @@ import { faker } from '@faker-js/faker';
 // Hàm seed người dùng
 const seedUsers = async (count = 10) => {
   try {
-    // Xóa dữ liệu cũ
     await User.deleteMany();
     console.log("Đã xóa dữ liệu User cũ");
 
-    // Tạo mật khẩu mặc định đã được hash
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash("password123", salt);
 
