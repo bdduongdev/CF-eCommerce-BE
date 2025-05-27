@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
-const orderStatusHistorySchema = new Schema({
+const OrderStatusHistorySchema = new Schema({
   order_id: {
     type: Schema.Types.ObjectId,
     ref: 'Order'
@@ -27,4 +27,4 @@ const orderStatusHistorySchema = new Schema({
   timestamps: { createdAt: 'changed_at' }
 });
 
-export default mongoose.model('OrderStatusHistory', orderStatusHistorySchema);
+export default mongoose.model('OrderStatusHistory', OrderStatusHistorySchema);

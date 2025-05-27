@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
-const cartItemSchema = new Schema({
+const CartItemSchema = new Schema({
   cart_id: {
     type: Schema.Types.ObjectId,
     ref: 'Cart'
@@ -26,4 +26,4 @@ const cartItemSchema = new Schema({
   timestamps: { createdAt: 'added_at' }
 });
 
-export default mongoose.model('CartItem', cartItemSchema);
+export default mongoose.model('CartItem', CartItemSchema);

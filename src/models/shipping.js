@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
-const shippingSchema = new Schema({
+const ShippingSchema = new Schema({
   order_id: {
     type: Schema.Types.ObjectId,
     ref: 'Order'
@@ -21,4 +21,4 @@ const shippingSchema = new Schema({
   }
 });
 
-export default mongoose.model('Shipping', shippingSchema);
+export default mongoose.model('Shipping', ShippingSchema);

@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
-const wishlistItemSchema = new Schema({
+const WishlistItemSchema = new Schema({
   wishlist_id: {
     type: Schema.Types.ObjectId,
     ref: 'Wishlist'
@@ -21,4 +21,4 @@ const wishlistItemSchema = new Schema({
   timestamps: { createdAt: 'added_at' }
 });
 
-export default mongoose.model('WishlistItem', wishlistItemSchema);
+export default mongoose.model('WishlistItem', WishlistItemSchema);

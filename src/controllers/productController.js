@@ -1,4 +1,4 @@
-import Product from "../models/product.js";
+import Product from "../models/Product.js";
 import createError from "../utils/createError.js";
 import handleAsync from "../utils/handleAsync.js";
 import mongoose from "mongoose";
@@ -54,6 +54,38 @@ const getAllProducts = handleAsync(async (req, res, next) => {
             }
         },
         message: "Lấy danh sách sản phẩm thành công"
+    });
+});
+
+const getTrashedProducts = handleAsync(async (req, res, next) => {
+    const { limit = 10, page = 1 } = req.query;
+    
+    const query = { is_deleted: true }; // Chỉ lấy sản phẩm đã bị xóa mềm
+    
+    const skip = (parseInt(page) - 1) * parseInt(limit);
+    
+    const products = await Product.find(query)
+        .sort({ updated_at: -1 })
+        .skip(skip)
+        .limit(parseInt(limit))
+        .populate('category_id', 'category_name')
+        .populate('color_id', 'color_name')
+        .populate('storage_id', 'storage_name');
+    
+    const total = await Product.countDocuments(query);
+    
+    res.status(200).json({
+        success: true,
+        data: {
+            products,
+            pagination: {
+                total,
+                page: parseInt(page),
+                limit: parseInt(limit),
+                totalPages: Math.ceil(total / parseInt(limit))
+            }
+        },
+        message: "Lấy danh sách sản phẩm đã xóa mềm thành công"
     });
 });
 
@@ -246,18 +278,45 @@ const deleteProduct = handleAsync(async (req, res, next) => {
         return next(createError(404, "Không tìm thấy sản phẩm"));
     }
     
-    await Product.findByIdAndDelete(id);
+    await Product.findByIdAndUpdate(id, { is_deleted: true, updated_at: Date.now() });
     
     res.status(200).json({
         success: true,
-        message: "Xóa sản phẩm thành công"
+        message: "Xóa mềm sản phẩm thành công"
+    });
+});
+
+const restoreProduct = handleAsync(async (req, res, next) => {
+    const { id } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return next(createError(400, "ID sản phẩm không hợp lệ"));
+    }
+    
+    const product = await Product.findById(id);
+    
+    if (!product) {
+        return next(createError(404, "Không tìm thấy sản phẩm"));
+    }
+    
+    if (!product.is_deleted) {
+        return next(createError(400, "Sản phẩm chưa bị xóa mềm"));
+    }
+    
+    await Product.findByIdAndUpdate(id, { is_deleted: false, updated_at: Date.now() });
+    
+    res.status(200).json({
+        success: true,
+        message: "Khôi phục sản phẩm thành công"
     });
 });
 
 export {
     getAllProducts,
     getProductById,
+    getTrashedProducts,
     createProduct,
     updateProduct,
-    deleteProduct
+    deleteProduct,
+    restoreProduct
 };

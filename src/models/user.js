@@ -1,7 +1,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
-const userSchema = new mongoose.Schema({
+const UserSchema = new mongoose.Schema({
     fullname: {
         type: String,
         required: true,
@@ -48,7 +48,7 @@ const userSchema = new mongoose.Schema({
 });
 
 // Middleware để hash mật khẩu trước khi lưu
-userSchema.pre("save", async function(next) {
+UserSchema.pre("save", async function(next) {
     if (!this.isModified("password")) return next();
     
     try {
@@ -60,4 +60,4 @@ userSchema.pre("save", async function(next) {
     }
 });
 
-export default mongoose.model("User", userSchema);
+export default mongoose.model("User", UserSchema);

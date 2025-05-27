@@ -1,0 +1,26 @@
+const message = {
+    AUTH: {
+        LOGIN_SUCCESS: "Đăng nhập thành công",
+        LOGIN_FAIL: "Đăng nhập thất bại",
+        REGISTER_SUCCESS: "Đăng ký thành công",
+        REGISTER_FAIL: "Đăng ký thất bại",
+        LOGOUT_SUCCESS: "Đăng xuất thành công",
+        LOGOUT_FAIL: "Đăng xuất thất bại",
+        USER_NOT_FOUND: "Người dùng không tồn tại",
+        USER_EXIST: "Người dùng đã tồn tại",
+        PASSWORD_NOT_MATCH: "Mật khẩu không đúng",
+        PASSWORD_MATCH: "Mật khẩu đúng",
+        TOKEN_NOT_FOUND: "Token không tồn tại",
+        TOKEN_EXPIRED: "Token đã hết hạn",
+        TOKEN_INVALID: "Token không hợp lệ",
+        TOKEN_VALID: "Token hợp lệ",
+        TOKEN_REFRESH_SUCCESS: "Refresh token thành công",
+        TOKEN_REFRESH_FAIL: "Refresh token thất bại",
+        TOKEN_REFRESH_EXPIRED: "Refresh token đã hết hạn",
+        TOKEN_REFRESH_INVALID: "Refresh token không hợp lệ",
+        TOKEN_REFRESH_VALID: "Refresh token hợp lệ",
+        TOKEN_REFRESH_NOT_FOUND: "Refresh token không tồn tại",
+        TOKEN_REFRESH_EXIST: "Refresh token đã tồn tại",
+        TOKEN_REFRESH_NOT_MATCH: "Refresh token không đúng",
+    }
+};

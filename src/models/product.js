@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
-const productSchema = new Schema({
+const ProductSchema = new Schema({
   product_name: {
     type: String,
     required: true,
@@ -35,6 +35,10 @@ const productSchema = new Schema({
     type: String,
     maxlength: 255
   },
+  is_deleted: {
+    type: Boolean,
+    default: false
+  },
   created_at: {
     type: Date,
     default: Date.now
@@ -44,7 +48,8 @@ const productSchema = new Schema({
     default: Date.now
   }
 }, {
-  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' }
+  timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
+  indexes: [{ key: { is_deleted: 1 } }]
 });
 
-export default mongoose.model('Product', productSchema);
+export default mongoose.model('Product', ProductSchema);

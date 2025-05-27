@@ -1,26 +1,26 @@
-import User from './user.model.js';
-import Role from './role.model.js';
-import Category from './category.model.js';
-import Product from './product.model.js';
-import ProductColor from './product-color.model.js';
-import ProductStorage from './product-storage.model.js';
-import Discount from './discount.model.js';
-import Wishlist from './wishlist.model.js';
-import WishlistItem from './wishlist-item.model.js';
-import Cart from './cart.model.js';
-import CartItem from './cart-item.model.js';
-import Order from './order.model.js';
-import OrderDetail from './order-detail.model.js';
-import Review from './review.model.js';
-import Payment from './payment.model.js';
-import Shipping from './shipping.model.js';
-import OrderStatusHistory from './order-status-history.model.js';
-import Inventory from './inventory.model.js';
-import Coupon from './coupon.model.js';
+import User from './User.js';
+import Category from './Category.js';
+import Product from './Product.js';
+import ProductColor from './ProductColor.js';
+import ProductStorage from './ProductStorage.js';
+import Discount from './Discount.js';
+import Wishlist from './Wishlist.js';
+import WishlistItem from './WishlistItem.js';
+import Cart from './Cart.js';
+import CartItem from './CartItem.js';
+import Order from './Order.js';
+import OrderDetail from './OrderDetail.js';
+import Review from './Review.js';
+import Payment from './Payment.js';
+import Shipping from './Shipping.js';
+import OrderStatusHistory from './OrderStatusHistory.js';
+import Inventory from './Inventory.js';
+import Coupon from './Coupon.js';
+import RefreshToken from './RefreshToken.js';
+import PasswordResetToken from './PasswordResetToken.js';
 
 export {
   User,
-  Role,
   Category,
   Product,
   ProductColor,
@@ -37,5 +37,7 @@ export {
   Shipping,
   OrderStatusHistory,
   Inventory,
-  Coupon
+  Coupon,
+  RefreshToken,
+  PasswordResetToken
 };

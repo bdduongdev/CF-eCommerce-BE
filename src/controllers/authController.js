@@ -1,6 +1,6 @@
-import User from "../models/user.js";
-import PasswordReset from "../models/passwordReset.js";
-import EmailVerification from "../models/emailVerification.js";
+import User from "../models/User.js";
+import PasswordReset from "../models/PasswordResetToken.js";
+import EmailVerification from "../models/EmailVerification.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import createError from "../utils/createError.js";
@@ -109,16 +109,16 @@ const register = handleAsync(async (req, res, next) => {
     });
     
     const message = `
-    Xin chào ${newUser.fullname},
-    
-    Cảm ơn bạn đã đăng ký tài khoản. Vui lòng sử dụng mã xác thực sau để xác minh tài khoản của bạn:
-    
-    ${verificationToken}
-    
-    Mã xác thực này sẽ hết hạn sau 24 giờ.
-    
-    Trân trọng,
-    Đội ngũ hỗ trợ
+        Xin chào ${newUser.fullname},
+        
+        Cảm ơn bạn đã đăng ký tài khoản. Vui lòng sử dụng mã xác thực sau để xác minh tài khoản của bạn:
+        
+        ${verificationToken}
+        
+        Mã xác thực này sẽ hết hạn sau 24 giờ.
+        
+        Trân trọng,
+        Đội ngũ hỗ trợ
     `;
     
     try {
@@ -172,17 +172,14 @@ const verifyEmail = handleAsync(async (req, res, next) => {
         return next(createError(400, "Mã xác thực không hợp lệ hoặc đã hết hạn"));
     }
     
-    // Tìm user và cập nhật trạng thái xác thực
     const user = await User.findById(emailVerification.userId);
     if (!user) {
         return next(createError(404, "Không tìm thấy tài khoản người dùng"));
     }
     
-    // Cập nhật trạng thái xác thực
     user.isVerified = true;
     await user.save();
     
-    // Đánh dấu token đã được sử dụng
     emailVerification.isUsed = true;
     await emailVerification.save();
     
@@ -215,23 +212,23 @@ const forgotPassword = handleAsync(async (req, res, next) => {
     });
     
     const message = `
-    Xin chào ${user.fullname},
-    
-    Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản của mình. Vui lòng sử dụng mã xác thực sau để đặt lại mật khẩu:
-    
-    ${resetToken}
-    
-    Mã xác thực này sẽ hết hạn sau 1 giờ.
-    
-    Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
-    
-    Trân trọng,
-    Đội ngũ hỗ trợ
+        Xin chào ${user.fullname},
+        
+        Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản của mình. Vui lòng sử dụng mã xác thực sau để đặt lại mật khẩu:
+        
+        ${resetToken}
+        
+        Mã xác thực này sẽ hết hạn sau 1 giờ.
+        
+        Nếu bạn không yêu cầu đặt lại mật khẩu, vui lòng bỏ qua email này.
+        
+        Trân trọng,
+        Đội ngũ hỗ trợ
     `;
     
     try {
         console.log("Đang gửi email đến:", user.email);
-        console.log("Token reset:", resetToken); // Thay resetUrl bằng resetToken
+        console.log("Token reset:", resetToken); 
         await sendEmail(user.email, "Đặt lại mật khẩu", message);
         
         res.status(200).json({
@@ -240,7 +237,7 @@ const forgotPassword = handleAsync(async (req, res, next) => {
         });
     } catch (error) {
         console.error("Lỗi gửi email:", error);
-        // Xóa token nếu không gửi được email
+
         await PasswordReset.deleteOne({ token: resetToken });
         
         return next(createError(500, "Không thể gửi email đặt lại mật khẩu"));
@@ -306,7 +303,6 @@ const resetPassword = handleAsync(async (req, res, next) => {
     user.password = password;
     await user.save();
     
-    // Đánh dấu token đã được sử dụng
     passwordReset.isUsed = true;
     await passwordReset.save();
     
@@ -317,25 +313,25 @@ const resetPassword = handleAsync(async (req, res, next) => {
 });
 
 const logout = handleAsync(async (req, res, next) => {
-const authHeader = req.headers.authorization;
-const token = authHeader && authHeader.split(' ')[1];
+    const authHeader = req.headers.authorization;
+    const token = authHeader && authHeader.split(' ')[1];
 
-if (!token) {
-    return next(createError(401, "Bạn chưa đăng nhập"));
-}
+    if (!token) {
+        return next(createError(401, "Bạn chưa đăng nhập"));
+    }
 
-res.status(200).json({
-    success: true,
-    message: "Đăng xuất thành công"
+    res.status(200).json({
+        success: true,
+        message: "Đăng xuất thành công"
+        });
     });
-});
 
 export {
-login,
-register,
-verifyEmail,
-forgotPassword,
-validateResetToken,
-resetPassword,
-logout
+    login,
+    register,
+    verifyEmail,
+    forgotPassword,
+    validateResetToken,
+    resetPassword,
+    logout
 };

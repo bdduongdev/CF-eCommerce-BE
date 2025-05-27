@@ -1,4 +1,4 @@
-import Category from "../models/category.js";
+import Category from "../models/Category.js";
 import { faker } from '@faker-js/faker';
 
 const seedCategories = async (count = 10) => {

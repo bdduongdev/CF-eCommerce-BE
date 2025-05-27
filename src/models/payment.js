@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
-const paymentSchema = new Schema({
+const PaymentSchema = new Schema({
   order_id: {
     type: Schema.Types.ObjectId,
     ref: 'Order'
@@ -22,4 +22,4 @@ const paymentSchema = new Schema({
   timestamps: { createdAt: 'payment_date' }
 });
 
-export default mongoose.model('Payment', paymentSchema);
+export default mongoose.model('Payment', PaymentSchema);
