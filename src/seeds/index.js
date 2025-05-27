@@ -8,7 +8,7 @@ import seedProducts from "./ProductSeeder.js";
 import seedBanners from "./BannerSeeder.js";
 import seedDiscounts from "./DiscountSeeder.js";
 import seedOrders from "./OrderSeeder.js";
-import "../models/password-reset.js";
+import "../models/PasswordResetToken.js";
 
 const seedAll = async () => {
   try {

@@ -5,19 +5,23 @@ import {
     getStorageById,
     createStorage,
     updateStorage,
-    deleteStorage
+    deleteStorage,
+    getTrashedStorages,
+    restoreStorage
 } from "../controllers/productStorageController.js";
 
 const router = express.Router();
 
-// Route công khai
 router.get("/", getAllStorages);
-router.get("/:id", getStorageById);
 
-// Route yêu cầu quyền admin
 router.use(verifyToken);
 router.use(isAdmin);
 
+router.get("/trashed", getTrashedStorages);
+router.put("/restore/:id", restoreStorage);
+
+// Routes với tham số id
+router.get("/:id", getStorageById);
 router.post("/", createStorage);
 router.put("/:id", updateStorage);
 router.delete("/:id", deleteStorage);

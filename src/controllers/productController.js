@@ -60,7 +60,7 @@ const getAllProducts = handleAsync(async (req, res, next) => {
 const getTrashedProducts = handleAsync(async (req, res, next) => {
     const { limit = 10, page = 1 } = req.query;
     
-    const query = { is_deleted: true }; // Chỉ lấy sản phẩm đã bị xóa mềm
+    const query = { is_deleted: true };
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     

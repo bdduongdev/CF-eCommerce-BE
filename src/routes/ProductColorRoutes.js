@@ -5,19 +5,22 @@ import {
     getColorById,
     createColor,
     updateColor,
-    deleteColor
+    deleteColor,
+    getTrashedColors,
+    restoreColor
 } from "../controllers/productColorController.js";
 
 const router = express.Router();
 
-// Route công khai
 router.get("/", getAllColors);
-router.get("/:id", getColorById);
 
-// Route yêu cầu quyền admin
 router.use(verifyToken);
 router.use(isAdmin);
 
+router.get("/trashed", getTrashedColors);
+router.put("/restore/:id", restoreColor);
+
+router.get("/:id", getColorById);
 router.post("/", createColor);
 router.put("/:id", updateColor);
 router.delete("/:id", deleteColor);

@@ -5,12 +5,23 @@ import mongoose from "mongoose";
 
 // Lấy tất cả dung lượng
 const getAllStorages = handleAsync(async (req, res, next) => {
-    const storages = await ProductStorage.find().sort({ storage_name: 1 });
+    const storages = await ProductStorage.find({ is_deleted: false }).sort({ storage_name: 1 });
     
     res.status(200).json({
         success: true,
         data: storages,
         message: "Lấy danh sách dung lượng thành công"
+    });
+});
+
+// Lấy danh sách dung lượng đã xóa mềm
+const getTrashedStorages = handleAsync(async (req, res, next) => {
+    const storages = await ProductStorage.find({ is_deleted: true }).sort({ updated_at: -1 });
+    
+    res.status(200).json({
+        success: true,
+        data: storages,
+        message: "Lấy danh sách dung lượng đã xóa mềm thành công"
     });
 });
 
@@ -103,7 +114,7 @@ const updateStorage = handleAsync(async (req, res, next) => {
     });
 });
 
-// Xóa dung lượng
+// Xóa mềm dung lượng
 const deleteStorage = handleAsync(async (req, res, next) => {
     const { id } = req.params;
     
@@ -117,11 +128,45 @@ const deleteStorage = handleAsync(async (req, res, next) => {
         return next(createError(404, "Không tìm thấy dung lượng"));
     }
     
-    await ProductStorage.findByIdAndDelete(id);
+    // Cập nhật trạng thái xóa mềm
+    await ProductStorage.findByIdAndUpdate(id, {
+        is_deleted: true,
+        updated_at: Date.now()
+    });
     
     res.status(200).json({
         success: true,
         message: "Xóa dung lượng thành công"
+    });
+});
+
+// Khôi phục dung lượng đã xóa mềm
+const restoreStorage = handleAsync(async (req, res, next) => {
+    const { id } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return next(createError(400, "ID dung lượng không hợp lệ"));
+    }
+    
+    const storage = await ProductStorage.findById(id);
+    
+    if (!storage) {
+        return next(createError(404, "Không tìm thấy dung lượng"));
+    }
+    
+    if (!storage.is_deleted) {
+        return next(createError(400, "Dung lượng này chưa bị xóa"));
+    }
+    
+    // Khôi phục dung lượng
+    await ProductStorage.findByIdAndUpdate(id, {
+        is_deleted: false,
+        updated_at: Date.now()
+    });
+    
+    res.status(200).json({
+        success: true,
+        message: "Khôi phục dung lượng thành công"
     });
 });
 
@@ -130,5 +175,7 @@ export {
     getStorageById,
     createStorage,
     updateStorage,
-    deleteStorage
+    deleteStorage,
+    getTrashedStorages,
+    restoreStorage
 };

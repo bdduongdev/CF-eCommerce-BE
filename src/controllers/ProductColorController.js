@@ -5,12 +5,23 @@ import mongoose from "mongoose";
 
 // Lấy tất cả màu sắc
 const getAllColors = handleAsync(async (req, res, next) => {
-    const colors = await ProductColor.find().sort({ color_name: 1 });
+    const colors = await ProductColor.find({ is_deleted: false }).sort({ color_name: 1 });
     
     res.status(200).json({
         success: true,
         data: colors,
         message: "Lấy danh sách màu sắc thành công"
+    });
+});
+
+// Lấy danh sách màu sắc đã xóa mềm
+const getTrashedColors = handleAsync(async (req, res, next) => {
+    const colors = await ProductColor.find({ is_deleted: true }).sort({ updated_at: -1 });
+    
+    res.status(200).json({
+        success: true,
+        data: colors,
+        message: "Lấy danh sách màu sắc đã xóa mềm thành công"
     });
 });
 
@@ -103,7 +114,7 @@ const updateColor = handleAsync(async (req, res, next) => {
     });
 });
 
-// Xóa màu sắc
+// Xóa mềm màu sắc
 const deleteColor = handleAsync(async (req, res, next) => {
     const { id } = req.params;
     
@@ -117,11 +128,45 @@ const deleteColor = handleAsync(async (req, res, next) => {
         return next(createError(404, "Không tìm thấy màu sắc"));
     }
     
-    await ProductColor.findByIdAndDelete(id);
+    // Cập nhật trạng thái xóa mềm
+    await ProductColor.findByIdAndUpdate(id, {
+        is_deleted: true,
+        updated_at: Date.now()
+    });
     
     res.status(200).json({
         success: true,
         message: "Xóa màu sắc thành công"
+    });
+});
+
+// Khôi phục màu sắc đã xóa mềm
+const restoreColor = handleAsync(async (req, res, next) => {
+    const { id } = req.params;
+    
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+        return next(createError(400, "ID màu sắc không hợp lệ"));
+    }
+    
+    const color = await ProductColor.findById(id);
+    
+    if (!color) {
+        return next(createError(404, "Không tìm thấy màu sắc"));
+    }
+    
+    if (!color.is_deleted) {
+        return next(createError(400, "Màu sắc này chưa bị xóa"));
+    }
+    
+    // Khôi phục màu sắc
+    await ProductColor.findByIdAndUpdate(id, {
+        is_deleted: false,
+        updated_at: Date.now()
+    });
+    
+    res.status(200).json({
+        success: true,
+        message: "Khôi phục màu sắc thành công"
     });
 });
 
@@ -130,5 +175,7 @@ export {
     getColorById,
     createColor,
     updateColor,
-    deleteColor
+    deleteColor,
+    getTrashedColors,
+    restoreColor
 };

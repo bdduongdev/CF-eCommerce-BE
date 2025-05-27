@@ -7,6 +7,7 @@ import cors from "cors";
 import { PORT } from "./src/configs/enviroments.js";
 import jsonValid from "./src/middlewares/jsonInvalid.js";
 import setupSwagger from "./src/configs/swaggerConfig.js";
+import "./src/models/index.js";
 
 const app = express();
 app.use(express.json());
