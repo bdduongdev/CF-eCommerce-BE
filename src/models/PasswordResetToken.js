@@ -1,6 +1,7 @@
-import mongoose from "mongoose";
+import mongoose from 'mongoose';
+const Schema = mongoose.Schema;
 
-const passwordResetSchema = new mongoose.Schema({
+const PasswordResetTokenSchema = new Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -25,8 +26,8 @@ const passwordResetSchema = new mongoose.Schema({
   createdAt: {
     type: Date,
     default: Date.now,
-    expires: 3600 // Tự động xóa document sau 1 giờ
+    expires: 3600
   }
 });
 
-export default mongoose.model("PasswordReset", passwordResetSchema);
+export default mongoose.model('PasswordResetToken', PasswordResetTokenSchema);

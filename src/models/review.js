@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
-const reviewSchema = new Schema({
+const ReviewSchema = new Schema({
   user_id: {
     type: Schema.Types.ObjectId,
     ref: 'User'
@@ -27,4 +27,4 @@ const reviewSchema = new Schema({
   timestamps: { createdAt: 'review_date' }
 });
 
-export default mongoose.model('Review', reviewSchema);
+export default mongoose.model('Review', ReviewSchema);

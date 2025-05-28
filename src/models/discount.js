@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
-const discountSchema = new Schema({
+const DiscountSchema = new Schema({
   product_id: {
     type: Schema.Types.ObjectId,
     ref: 'Product'
@@ -35,4 +35,4 @@ const discountSchema = new Schema({
   timestamps: { createdAt: 'created_at' }
 });
 
-export default mongoose.model('Discount', discountSchema);
+export default mongoose.model('Discount', DiscountSchema);

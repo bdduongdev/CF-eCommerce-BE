@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
-const inventorySchema = new Schema({
+const InventorySchema = new Schema({
   product_id: {
     type: Schema.Types.ObjectId,
     ref: 'Product'
@@ -30,4 +30,4 @@ const inventorySchema = new Schema({
   timestamps: { createdAt: 'changed_at' }
 });
 
-export default mongoose.model('Inventory', inventorySchema);
+export default mongoose.model('Inventory', InventorySchema);

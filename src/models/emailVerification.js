@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 
-const emailVerificationSchema = new mongoose.Schema({
+const EmailVerificationSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
@@ -29,4 +29,4 @@ const emailVerificationSchema = new mongoose.Schema({
   }
 });
 
-export default mongoose.model("EmailVerification", emailVerificationSchema);
+export default mongoose.model("EmailVerification", EmailVerificationSchema);

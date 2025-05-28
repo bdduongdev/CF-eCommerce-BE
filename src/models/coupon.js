@@ -1,7 +1,7 @@
 import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
-const couponSchema = new Schema({
+const CouponSchema = new Schema({
   code: {
     type: String,
     required: true,
@@ -49,4 +49,4 @@ const couponSchema = new Schema({
   timestamps: { createdAt: 'created_at' }
 });
 
-export default mongoose.model('Coupon', couponSchema);
+export default mongoose.model('Coupon', CouponSchema);
