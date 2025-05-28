@@ -2,64 +2,61 @@ import ProductStorage from "../models/ProductStorage.js";
 import createError from "../utils/createError.js";
 import handleAsync from "../utils/handleAsync.js";
 import mongoose from "mongoose";
+import message from "../constants/index.js";
 
-// Lấy tất cả dung lượng
 const getAllStorages = handleAsync(async (req, res, next) => {
     const storages = await ProductStorage.find({ is_deleted: false }).sort({ storage_name: 1 });
     
     res.status(200).json({
         success: true,
         data: storages,
-        message: "Lấy danh sách dung lượng thành công"
+        message: message.PRODUCT_STORAGE.GET_ALL_SUCCESS
     });
 });
 
-// Lấy danh sách dung lượng đã xóa mềm
 const getTrashedStorages = handleAsync(async (req, res, next) => {
     const storages = await ProductStorage.find({ is_deleted: true }).sort({ updated_at: -1 });
     
     res.status(200).json({
         success: true,
         data: storages,
-        message: "Lấy danh sách dung lượng đã xóa mềm thành công"
+        message: message.PRODUCT_STORAGE.GET_TRASHED_SUCCESS
     });
 });
 
-// Lấy dung lượng theo ID
 const getStorageById = handleAsync(async (req, res, next) => {
     const { id } = req.params;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return next(createError(400, "ID dung lượng không hợp lệ"));
+        return next(createError(400, message.PRODUCT_STORAGE.INVALID_ID));
     }
     
     const storage = await ProductStorage.findById(id);
     
     if (!storage) {
-        return next(createError(404, "Không tìm thấy dung lượng"));
+        return next(createError(404, message.PRODUCT_STORAGE.NOT_FOUND));
     }
     
     res.status(200).json({
         success: true,
         data: storage,
-        message: "Lấy thông tin dung lượng thành công"
+        message: message.PRODUCT_STORAGE.GET_BY_ID_SUCCESS
     });
 });
 
-// Tạo dung lượng mới
 const createStorage = handleAsync(async (req, res, next) => {
     const { storage_name, price } = req.body;
     
     if (!storage_name || price === undefined) {
-        return next(createError(400, "Tên và giá dung lượng là bắt buộc"));
+        return next(createError(400, message.PRODUCT_STORAGE.NAME_PRICE_REQUIRED));
     }
     
     if (storage_name.length > 100) {
-        return next(createError(400, "Tên dung lượng không được vượt quá 100 ký tự"));
+        return next(createError(400, message.PRODUCT_STORAGE.NAME_TOO_LONG));
     }
     
     if (isNaN(price) || price < 0) {
-        return next(createError(400, "Giá phải là số không âm"));
+        return next(createError(400, message.PRODUCT_STORAGE.PRICE_INVALID));
     }
     
     const newStorage = await ProductStorage.create({
@@ -70,35 +67,32 @@ const createStorage = handleAsync(async (req, res, next) => {
     res.status(201).json({
         success: true,
         data: newStorage,
-        message: "Tạo dung lượng mới thành công"
+        message: message.PRODUCT_STORAGE.CREATE_SUCCESS
     });
 });
 
-// Cập nhật dung lượng
 const updateStorage = handleAsync(async (req, res, next) => {
     const { id } = req.params;
     const updateData = req.body;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return next(createError(400, "ID dung lượng không hợp lệ"));
+        return next(createError(400, message.PRODUCT_STORAGE.INVALID_ID));
     }
     
     const storage = await ProductStorage.findById(id);
     
     if (!storage) {
-        return next(createError(404, "Không tìm thấy dung lượng"));
+        return next(createError(404, message.PRODUCT_STORAGE.NOT_FOUND));
     }
     
-    // Validate dữ liệu cập nhật
     if (updateData.storage_name && updateData.storage_name.length > 100) {
-        return next(createError(400, "Tên dung lượng không được vượt quá 100 ký tự"));
+        return next(createError(400, message.PRODUCT_STORAGE.NAME_TOO_LONG));
     }
     
     if (updateData.price !== undefined && (isNaN(updateData.price) || updateData.price < 0)) {
-        return next(createError(400, "Giá phải là số không âm"));
+        return next(createError(400, message.PRODUCT_STORAGE.PRICE_INVALID));
     }
     
-    // Cập nhật thời gian cập nhật
     updateData.updated_at = Date.now();
     
     const updatedStorage = await ProductStorage.findByIdAndUpdate(
@@ -110,25 +104,23 @@ const updateStorage = handleAsync(async (req, res, next) => {
     res.status(200).json({
         success: true,
         data: updatedStorage,
-        message: "Cập nhật dung lượng thành công"
+        message: message.PRODUCT_STORAGE.UPDATE_SUCCESS
     });
 });
 
-// Xóa mềm dung lượng
 const deleteStorage = handleAsync(async (req, res, next) => {
     const { id } = req.params;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return next(createError(400, "ID dung lượng không hợp lệ"));
+        return next(createError(400, message.PRODUCT_STORAGE.INVALID_ID));
     }
     
     const storage = await ProductStorage.findById(id);
     
     if (!storage) {
-        return next(createError(404, "Không tìm thấy dung lượng"));
+        return next(createError(404, message.PRODUCT_STORAGE.NOT_FOUND));
     }
     
-    // Cập nhật trạng thái xóa mềm
     await ProductStorage.findByIdAndUpdate(id, {
         is_deleted: true,
         updated_at: Date.now()
@@ -136,29 +128,27 @@ const deleteStorage = handleAsync(async (req, res, next) => {
     
     res.status(200).json({
         success: true,
-        message: "Xóa dung lượng thành công"
+        message: message.PRODUCT_STORAGE.DELETE_SUCCESS
     });
 });
 
-// Khôi phục dung lượng đã xóa mềm
 const restoreStorage = handleAsync(async (req, res, next) => {
     const { id } = req.params;
     
     if (!mongoose.Types.ObjectId.isValid(id)) {
-        return next(createError(400, "ID dung lượng không hợp lệ"));
+        return next(createError(400, message.PRODUCT_STORAGE.INVALID_ID));
     }
     
     const storage = await ProductStorage.findById(id);
     
     if (!storage) {
-        return next(createError(404, "Không tìm thấy dung lượng"));
+        return next(createError(404, message.PRODUCT_STORAGE.NOT_FOUND));
     }
     
     if (!storage.is_deleted) {
-        return next(createError(400, "Dung lượng này chưa bị xóa"));
+        return next(createError(400, message.PRODUCT_STORAGE.NOT_DELETED));
     }
     
-    // Khôi phục dung lượng
     await ProductStorage.findByIdAndUpdate(id, {
         is_deleted: false,
         updated_at: Date.now()
@@ -166,7 +156,7 @@ const restoreStorage = handleAsync(async (req, res, next) => {
     
     res.status(200).json({
         success: true,
-        message: "Khôi phục dung lượng thành công"
+        message: message.PRODUCT_STORAGE.RESTORE_SUCCESS
     });
 });
 

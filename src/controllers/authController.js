@@ -9,26 +9,27 @@ import { generateToken, generateRefreshToken } from "../utils/jwt.js";
 import { JWT_SECRET, JWT_REFRESH_SECRET, FRONTEND_URL, RESET_PASSWORD_EXPIRES } from "../configs/enviroments.js";
 import { sendEmail } from "../utils/sendMail.js";
 import { generateResetToken } from "../utils/handleOTP.js";
+import message from "../constants/index.js";
 
 const login = handleAsync(async (req, res, next) => {
     const { email, password } = req.body;
 
     if (!email || !password) {
-        return next(createError(400, "Email và mật khẩu là bắt buộc"));
+        return next(createError(400, message.AUTH.CREDENTIALS_REQUIRED));
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-        return next(createError(401, "Email hoặc mật khẩu không đúng"));
+        return next(createError(401, message.AUTH.INVALID_CREDENTIALS));
     }
 
     const isPasswordCorrect = await bcrypt.compare(password, user.password);
     if (!isPasswordCorrect) {
-        return next(createError(401, "Email hoặc mật khẩu không đúng"));
+        return next(createError(401, message.AUTH.INVALID_CREDENTIALS));
     }
 
     if (!user.isVerified) {
-        return next(createError(401, "Tài khoản chưa được xác thực. Vui lòng kiểm tra email để xác thực tài khoản."));
+        return next(createError(401, message.AUTH.ACCOUNT_NOT_VERIFIED));
     }
 
     const accessToken = jwt.sign(
@@ -52,7 +53,7 @@ const login = handleAsync(async (req, res, next) => {
             accessToken,
             refreshToken
         },
-        message: "Đăng nhập thành công"
+        message: message.AUTH.LOGIN_SUCCESS
     });
 });
 
@@ -60,31 +61,31 @@ const register = handleAsync(async (req, res, next) => {
     const { fullname, email, password, confirmPassword, phone, address } = req.body;
 
     if (!fullname || !email || !password || !confirmPassword) {
-        return next(createError(400, "Họ tên, email, mật khẩu và xác nhận mật khẩu là bắt buộc"));
+        return next(createError(400, message.AUTH.REGISTER_FIELDS_REQUIRED));
     }
 
     if (password !== confirmPassword) {
-        return next(createError(400, "Mật khẩu và xác nhận mật khẩu không khớp"));
+        return next(createError(400, message.AUTH.PASSWORD_CONFIRM_NOT_MATCH));
     }
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-        return next(createError(400, "Email này đã được sử dụng"));
+        return next(createError(400, message.AUTH.EMAIL_IN_USE));
     }
 
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
-        return next(createError(400, "Email không hợp lệ"));
+        return next(createError(400, message.AUTH.INVALID_EMAIL));
     }
 
     if (password.length < 6) {
-        return next(createError(400, "Mật khẩu phải có ít nhất 6 ký tự"));
+        return next(createError(400, message.AUTH.PASSWORD_TOO_SHORT));
     }
 
     if (phone) {
         const phoneRegex = /^0\d{9}$/;
         if (!phoneRegex.test(phone)) {
-            return next(createError(400, "Số điện thoại không hợp lệ"));
+            return next(createError(400, message.AUTH.INVALID_PHONE));
         }
     }
 
@@ -108,7 +109,7 @@ const register = handleAsync(async (req, res, next) => {
         expires: verificationExpires
     });
     
-    const message = `
+    const emailMessage = `
         Xin chào ${newUser.fullname},
         
         Cảm ơn bạn đã đăng ký tài khoản. Vui lòng sử dụng mã xác thực sau để xác minh tài khoản của bạn:
@@ -124,7 +125,7 @@ const register = handleAsync(async (req, res, next) => {
     try {
         console.log("Đang gửi email xác thực đến:", newUser.email);
         console.log("Token xác thực:", verificationToken);
-        await sendEmail(newUser.email, "Xác thực tài khoản", message);
+        await sendEmail(newUser.email, "Xác thực tài khoản", emailMessage);
         
         const accessToken = generateToken(newUser);
         const refreshToken = generateRefreshToken(newUser);
@@ -138,7 +139,7 @@ const register = handleAsync(async (req, res, next) => {
                 accessToken,
                 refreshToken
             },
-            message: "Đăng ký tài khoản thành công. Vui lòng kiểm tra email để xác thực tài khoản."
+            message: message.AUTH.REGISTER_SUCCESS_WITH_VERIFICATION
         });
     } catch (error) {
         console.error("Lỗi gửi email xác thực:", error);
@@ -154,7 +155,7 @@ const register = handleAsync(async (req, res, next) => {
                 accessToken,
                 refreshToken
             },
-            message: "Đăng ký tài khoản thành công nhưng không thể gửi email xác thực."
+            message: message.AUTH.REGISTER_SUCCESS_WITHOUT_VERIFICATION
         });
     }
 });
@@ -169,12 +170,12 @@ const verifyEmail = handleAsync(async (req, res, next) => {
     });
     
     if (!emailVerification) {
-        return next(createError(400, "Mã xác thực không hợp lệ hoặc đã hết hạn"));
+        return next(createError(400, message.AUTH.INVALID_VERIFICATION_TOKEN));
     }
     
     const user = await User.findById(emailVerification.userId);
     if (!user) {
-        return next(createError(404, "Không tìm thấy tài khoản người dùng"));
+        return next(createError(404, message.AUTH.USER_ACCOUNT_NOT_FOUND));
     }
     
     user.isVerified = true;
@@ -185,7 +186,7 @@ const verifyEmail = handleAsync(async (req, res, next) => {
     
     res.status(200).json({
         success: true,
-        message: "Xác thực email thành công"
+        message: message.AUTH.EMAIL_VERIFICATION_SUCCESS
     });
 });
 
@@ -193,12 +194,12 @@ const forgotPassword = handleAsync(async (req, res, next) => {
     const { email } = req.body;
 
     if (!email) {
-        return next(createError(400, "Email là bắt buộc"));
+        return next(createError(400, message.AUTH.EMAIL_REQUIRED));
     }
 
     const user = await User.findOne({ email });
     if (!user) {
-        return next(createError(404, "Không tìm thấy tài khoản với email này"));
+        return next(createError(404, message.AUTH.EMAIL_NOT_FOUND));
     }
 
     const resetToken = generateResetToken();
@@ -211,7 +212,7 @@ const forgotPassword = handleAsync(async (req, res, next) => {
         expires: resetExpires
     });
     
-    const message = `
+    const emailMessage = `
         Xin chào ${user.fullname},
         
         Bạn đã yêu cầu đặt lại mật khẩu cho tài khoản của mình. Vui lòng sử dụng mã xác thực sau để đặt lại mật khẩu:
@@ -229,18 +230,18 @@ const forgotPassword = handleAsync(async (req, res, next) => {
     try {
         console.log("Đang gửi email đến:", user.email);
         console.log("Token reset:", resetToken); 
-        await sendEmail(user.email, "Đặt lại mật khẩu", message);
+        await sendEmail(user.email, "Đặt lại mật khẩu", emailMessage);
         
         res.status(200).json({
             success: true,
-            message: "Email đặt lại mật khẩu đã được gửi"
+            message: message.AUTH.RESET_EMAIL_SENT
         });
     } catch (error) {
         console.error("Lỗi gửi email:", error);
 
         await PasswordReset.deleteOne({ token: resetToken });
         
-        return next(createError(500, "Không thể gửi email đặt lại mật khẩu"));
+        return next(createError(500, message.AUTH.RESET_EMAIL_FAILED));
     }
 });
 
@@ -257,12 +258,12 @@ const validateResetToken = handleAsync(async (req, res, next) => {
     console.log("Kết quả tìm kiếm:", passwordReset);
     
     if (!passwordReset) {
-        return next(createError(400, "Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn"));
+        return next(createError(400, message.AUTH.INVALID_RESET_TOKEN));
     }
     
     res.status(200).json({
         success: true,
-        message: "Token hợp lệ",
+        message: message.AUTH.RESET_TOKEN_VALID,
         data: {
             email: passwordReset.email
         }
@@ -274,15 +275,15 @@ const resetPassword = handleAsync(async (req, res, next) => {
     const { password, confirmPassword } = req.body;
     
     if (!password || !confirmPassword) {
-        return next(createError(400, "Mật khẩu và xác nhận mật khẩu là bắt buộc"));
+        return next(createError(400, message.AUTH.PASSWORD_FIELDS_REQUIRED));
     }
     
     if (password !== confirmPassword) {
-        return next(createError(400, "Mật khẩu và xác nhận mật khẩu không khớp"));
+        return next(createError(400, message.AUTH.PASSWORD_CONFIRM_NOT_MATCH));
     }
     
     if (password.length < 6) {
-        return next(createError(400, "Mật khẩu phải có ít nhất 6 ký tự"));
+        return next(createError(400, message.AUTH.PASSWORD_TOO_SHORT));
     }
     
     const passwordReset = await PasswordReset.findOne({
@@ -292,12 +293,12 @@ const resetPassword = handleAsync(async (req, res, next) => {
     });
     
     if (!passwordReset) {
-        return next(createError(400, "Token đặt lại mật khẩu không hợp lệ hoặc đã hết hạn"));
+        return next(createError(400, message.AUTH.INVALID_RESET_TOKEN));
     }
     
     const user = await User.findById(passwordReset.userId);
     if (!user) {
-        return next(createError(404, "Không tìm thấy tài khoản người dùng"));
+        return next(createError(404, message.AUTH.USER_ACCOUNT_NOT_FOUND));
     }
     
     user.password = password;
@@ -308,7 +309,7 @@ const resetPassword = handleAsync(async (req, res, next) => {
     
     res.status(200).json({
         success: true,
-        message: "Mật khẩu đã được đặt lại thành công"
+        message: message.AUTH.PASSWORD_RESET_SUCCESS
     });
 });
 
@@ -317,14 +318,14 @@ const logout = handleAsync(async (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (!token) {
-        return next(createError(401, "Bạn chưa đăng nhập"));
+        return next(createError(401, message.AUTH.NOT_LOGGED_IN));
     }
 
     res.status(200).json({
         success: true,
-        message: "Đăng xuất thành công"
-        });
+        message: message.AUTH.LOGOUT_SUCCESS
     });
+});
 
 export {
     login,
