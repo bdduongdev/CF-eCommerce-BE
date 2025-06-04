@@ -9,6 +9,11 @@ import {
     deleteCategory,
     restoreCategory
 } from "../controllers/CategoryController.js";
+import validate from "../middlewares/validate.js";
+import {
+    createCategorySchema,
+    updateCategorySchema
+} from "../validations/category.validation.js";
 
 const router = express.Router();
 
@@ -19,8 +24,8 @@ router.use(verifyToken);
 router.use(isAdmin);
 
 router.get("/trashed", getTrashedCategories);
-router.post("/create", createCategory);
-router.put("/update/:id", updateCategory);
+router.post("/create", validate(createCategorySchema), createCategory);
+router.put("/update/:id", validate(updateCategorySchema), updateCategory);
 router.delete("/delete/:id", deleteCategory);
 router.put("/restore/:id", restoreCategory);
 

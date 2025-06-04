@@ -8,7 +8,9 @@ import {
     deleteStorage,
     getTrashedStorages,
     restoreStorage
-} from "../controllers/productStorageController.js";
+} from "../controllers/ProductStorageController.js";
+import validate from "../middlewares/validate.js";
+import { createStorageSchema, updateStorageSchema } from "../validations/productStorage.validation.js";
 
 const router = express.Router();
 
@@ -22,8 +24,8 @@ router.put("/restore/:id", restoreStorage);
 
 // Routes với tham số id
 router.get("/:id", getStorageById);
-router.post("/", createStorage);
-router.put("/:id", updateStorage);
+router.post("/", validate(createStorageSchema), createStorage);
+router.put("/:id", validate(updateStorageSchema), updateStorage);
 router.delete("/:id", deleteStorage);
 
 export default router;

@@ -45,19 +45,8 @@ const getStorageById = handleAsync(async (req, res, next) => {
 });
 
 const createStorage = handleAsync(async (req, res, next) => {
+    // Validation is now handled by Joi middleware
     const { storage_name, price } = req.body;
-    
-    if (!storage_name || price === undefined) {
-        return next(createError(400, message.PRODUCT_STORAGE.NAME_PRICE_REQUIRED));
-    }
-    
-    if (storage_name.length > 100) {
-        return next(createError(400, message.PRODUCT_STORAGE.NAME_TOO_LONG));
-    }
-    
-    if (isNaN(price) || price < 0) {
-        return next(createError(400, message.PRODUCT_STORAGE.PRICE_INVALID));
-    }
     
     const newStorage = await ProductStorage.create({
         storage_name,
@@ -85,13 +74,7 @@ const updateStorage = handleAsync(async (req, res, next) => {
         return next(createError(404, message.PRODUCT_STORAGE.NOT_FOUND));
     }
     
-    if (updateData.storage_name && updateData.storage_name.length > 100) {
-        return next(createError(400, message.PRODUCT_STORAGE.NAME_TOO_LONG));
-    }
-    
-    if (updateData.price !== undefined && (isNaN(updateData.price) || updateData.price < 0)) {
-        return next(createError(400, message.PRODUCT_STORAGE.PRICE_INVALID));
-    }
+    // Validation for fields is now handled by Joi middleware
     
     updateData.updated_at = Date.now();
     

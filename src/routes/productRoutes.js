@@ -8,7 +8,9 @@ import {
     deleteProduct, 
     getTrashedProducts,
     restoreProduct
-} from "../controllers/productController.js";
+} from "../controllers/ProductController.js";
+import validate from "../middlewares/validate.js";
+import { createProductSchema, updateProductSchema } from "../validations/product.validation.js";
 
 const router = express.Router();
 
@@ -18,8 +20,8 @@ router.get("/show/:id", getProductById);
 router.use(verifyToken);
 
 router.get("/trashed", isAdmin, getTrashedProducts);
-router.post("/create", isAdmin, createProduct);
-router.put("/update/:id", isAdmin, updateProduct);
+router.post("/create", isAdmin, validate(createProductSchema), createProduct);
+router.put("/update/:id", isAdmin, validate(updateProductSchema), updateProduct);
 router.delete("/delete/:id", isAdmin, deleteProduct);
 router.put("/restore/:id", isAdmin, restoreProduct);
 

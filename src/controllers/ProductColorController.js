@@ -47,17 +47,7 @@ const getColorById = handleAsync(async (req, res, next) => {
 const createColor = handleAsync(async (req, res, next) => {
     const { color_name, price } = req.body;
     
-    if (!color_name || price === undefined) {
-        return next(createError(400, message.PRODUCT_COLOR.NAME_PRICE_REQUIRED));
-    }
-    
-    if (color_name.length > 100) {
-        return next(createError(400, message.PRODUCT_COLOR.NAME_TOO_LONG));
-    }
-    
-    if (isNaN(price) || price < 0) {
-        return next(createError(400, message.PRODUCT_COLOR.PRICE_INVALID));
-    }
+    // Validation is now handled by the middleware
     
     const newColor = await ProductColor.create({
         color_name,
@@ -85,13 +75,7 @@ const updateColor = handleAsync(async (req, res, next) => {
         return next(createError(404, message.PRODUCT_COLOR.NOT_FOUND));
     }
     
-    if (updateData.color_name && updateData.color_name.length > 100) {
-        return next(createError(400, message.PRODUCT_COLOR.NAME_TOO_LONG));
-    }
-    
-    if (updateData.price !== undefined && (isNaN(updateData.price) || updateData.price < 0)) {
-        return next(createError(400, message.PRODUCT_COLOR.PRICE_INVALID));
-    }
+    // Validation is now handled by the middleware
     
     updateData.updated_at = Date.now();
     

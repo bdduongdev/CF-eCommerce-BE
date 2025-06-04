@@ -110,6 +110,7 @@ const getProductById = handleAsync(async (req, res, next) => {
 });
 
 const createProduct = handleAsync(async (req, res, next) => {
+    // Validation is now handled by Joi middleware
     const { 
         product_name, 
         description, 
@@ -120,50 +121,6 @@ const createProduct = handleAsync(async (req, res, next) => {
         storage_id, 
         image_url 
     } = req.body;
-    
-    if (!product_name) {
-        return next(createError(400, message.PRODUCT.NAME_REQUIRED));
-    }
-    
-    if (product_name.length > 100) {
-        return next(createError(400, message.PRODUCT.NAME_TOO_LONG));
-    }
-    
-    if (!price) {
-        return next(createError(400, message.PRODUCT.PRICE_REQUIRED));
-    }
-    
-    if (isNaN(price) || price < 0) {
-        return next(createError(400, message.PRODUCT.PRICE_INVALID));
-    }
-    
-    if (stock_quantity !== undefined) {
-        if (isNaN(stock_quantity) || stock_quantity < 0) {
-            return next(createError(400, message.PRODUCT.STOCK_INVALID));
-        }
-    }
-    
-    if (category_id) {
-        if (!mongoose.Types.ObjectId.isValid(category_id)) {
-            return next(createError(400, message.PRODUCT.CATEGORY_ID_INVALID));
-        }
-    }
-    
-    if (color_id) {
-        if (!mongoose.Types.ObjectId.isValid(color_id)) {
-            return next(createError(400, message.PRODUCT.COLOR_ID_INVALID));
-        }
-    }
-    
-    if (storage_id) {
-        if (!mongoose.Types.ObjectId.isValid(storage_id)) {
-            return next(createError(400, message.PRODUCT.STORAGE_ID_INVALID));
-        }
-    }
-    
-    if (image_url && image_url.length > 255) {
-        return next(createError(400, message.PRODUCT.IMAGE_URL_TOO_LONG));
-    }
     
     try {
         const newProduct = await Product.create({
@@ -205,43 +162,7 @@ const updateProduct = handleAsync(async (req, res, next) => {
         return next(createError(404, message.PRODUCT.NOT_FOUND));
     }
     
-    if (updateData.product_name && updateData.product_name.length > 100) {
-        return next(createError(400, message.PRODUCT.NAME_TOO_LONG));
-    }
-    
-    if (updateData.price !== undefined) {
-        if (isNaN(updateData.price) || updateData.price < 0) {
-            return next(createError(400, message.PRODUCT.PRICE_INVALID));
-        }
-    }
-    
-    if (updateData.stock_quantity !== undefined) {
-        if (isNaN(updateData.stock_quantity) || updateData.stock_quantity < 0) {
-            return next(createError(400, message.PRODUCT.STOCK_INVALID));
-        }
-    }
-    
-    if (updateData.category_id) {
-        if (!mongoose.Types.ObjectId.isValid(updateData.category_id)) {
-            return next(createError(400, message.PRODUCT.CATEGORY_ID_INVALID));
-        }
-    }
-    
-    if (updateData.color_id) {
-        if (!mongoose.Types.ObjectId.isValid(updateData.color_id)) {
-            return next(createError(400, message.PRODUCT.COLOR_ID_INVALID));
-        }
-    }
-    
-    if (updateData.storage_id) {
-        if (!mongoose.Types.ObjectId.isValid(updateData.storage_id)) {
-            return next(createError(400, message.PRODUCT.STORAGE_ID_INVALID));
-        }
-    }
-    
-    if (updateData.image_url && updateData.image_url.length > 255) {
-        return next(createError(400, message.PRODUCT.IMAGE_URL_TOO_LONG));
-    }
+    // Validation for fields is now handled by Joi middleware
     
     // Cập nhật thời gian cập nhật
     updateData.updated_at = Date.now();

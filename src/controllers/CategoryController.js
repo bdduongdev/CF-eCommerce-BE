@@ -85,13 +85,7 @@ const getCategoryById = handleAsync(async (req, res, next) => {
 const createCategory = handleAsync(async (req, res, next) => {
     const { category_name } = req.body;
     
-    if (!category_name) {
-        return next(createError(400, message.CATEGORY.NAME_REQUIRED));
-    }
-    
-    if (category_name.length > 50) {
-        return next(createError(400, message.CATEGORY.NAME_TOO_LONG));
-    }
+    // Validation is now handled by the middleware
     
     const existingCategory = await Category.findOne({ 
         category_name: { $regex: new RegExp("^" + category_name + "$", "i") },
@@ -131,13 +125,7 @@ const updateCategory = handleAsync(async (req, res, next) => {
         return next(createError(400, message.CATEGORY.CANNOT_UPDATE_DELETED));
     }
     
-    if (!category_name) {
-        return next(createError(400, message.CATEGORY.NAME_REQUIRED));
-    }
-    
-    if (category_name.length > 50) {
-        return next(createError(400, message.CATEGORY.NAME_TOO_LONG));
-    }
+    // Validation is now handled by the middleware
     
     const existingCategory = await Category.findOne({ 
         category_name: { $regex: new RegExp("^" + category_name + "$", "i") },
