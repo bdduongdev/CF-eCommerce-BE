@@ -13,10 +13,7 @@ import message from "../constants/index.js";
 
 const login = handleAsync(async (req, res, next) => {
     const { email, password } = req.body;
-
-    if (!email || !password) {
-        return next(createError(400, message.AUTH.CREDENTIALS_REQUIRED));
-    }
+    // Validation đã được xử lý bởi middleware validate
 
     const user = await User.findOne({ email });
     if (!user) {
@@ -58,35 +55,12 @@ const login = handleAsync(async (req, res, next) => {
 });
 
 const register = handleAsync(async (req, res, next) => {
-    const { fullname, email, password, confirmPassword, phone, address } = req.body;
-
-    if (!fullname || !email || !password || !confirmPassword) {
-        return next(createError(400, message.AUTH.REGISTER_FIELDS_REQUIRED));
-    }
-
-    if (password !== confirmPassword) {
-        return next(createError(400, message.AUTH.PASSWORD_CONFIRM_NOT_MATCH));
-    }
+    const { fullname, email, password, phone, address } = req.body;
+    // Validation đã được xử lý bởi middleware validate
 
     const existingUser = await User.findOne({ email });
     if (existingUser) {
         return next(createError(400, message.AUTH.EMAIL_IN_USE));
-    }
-
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email)) {
-        return next(createError(400, message.AUTH.INVALID_EMAIL));
-    }
-
-    if (password.length < 6) {
-        return next(createError(400, message.AUTH.PASSWORD_TOO_SHORT));
-    }
-
-    if (phone) {
-        const phoneRegex = /^0\d{9}$/;
-        if (!phoneRegex.test(phone)) {
-            return next(createError(400, message.AUTH.INVALID_PHONE));
-        }
     }
 
     const newUser = await User.create({
@@ -162,6 +136,7 @@ const register = handleAsync(async (req, res, next) => {
 
 const verifyEmail = handleAsync(async (req, res, next) => {
     const { verificationToken } = req.body;
+    // Validation đã được xử lý bởi middleware validate
     
     const emailVerification = await EmailVerification.findOne({
         token: verificationToken,
@@ -192,10 +167,7 @@ const verifyEmail = handleAsync(async (req, res, next) => {
 
 const forgotPassword = handleAsync(async (req, res, next) => {
     const { email } = req.body;
-
-    if (!email) {
-        return next(createError(400, message.AUTH.EMAIL_REQUIRED));
-    }
+    // Validation đã được xử lý bởi middleware validate
 
     const user = await User.findOne({ email });
     if (!user) {
@@ -273,18 +245,7 @@ const validateResetToken = handleAsync(async (req, res, next) => {
 const resetPassword = handleAsync(async (req, res, next) => {
     const { resetToken } = req.params;
     const { password, confirmPassword } = req.body;
-    
-    if (!password || !confirmPassword) {
-        return next(createError(400, message.AUTH.PASSWORD_FIELDS_REQUIRED));
-    }
-    
-    if (password !== confirmPassword) {
-        return next(createError(400, message.AUTH.PASSWORD_CONFIRM_NOT_MATCH));
-    }
-    
-    if (password.length < 6) {
-        return next(createError(400, message.AUTH.PASSWORD_TOO_SHORT));
-    }
+    // Validation đã được xử lý bởi middleware validate
     
     const passwordReset = await PasswordReset.findOne({
         token: resetToken,

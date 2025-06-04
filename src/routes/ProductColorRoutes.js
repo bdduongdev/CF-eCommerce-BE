@@ -8,7 +8,12 @@ import {
     deleteColor,
     getTrashedColors,
     restoreColor
-} from "../controllers/productColorController.js";
+} from "../controllers/ProductColorController.js";
+import validate from "../middlewares/validate.js";
+import {
+    createColorSchema,
+    updateColorSchema
+} from "../validations/productColor.validation.js";
 
 const router = express.Router();
 
@@ -21,8 +26,8 @@ router.get("/trashed", getTrashedColors);
 router.put("/restore/:id", restoreColor);
 
 router.get("/:id", getColorById);
-router.post("/", createColor);
-router.put("/:id", updateColor);
+router.post("/", validate(createColorSchema), createColor);
+router.put("/:id", validate(updateColorSchema), updateColor);
 router.delete("/:id", deleteColor);
 
 export default router;

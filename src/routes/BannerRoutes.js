@@ -10,20 +10,28 @@ import {
     restoreBanner,
     toggleBannerStatus
 } from "../controllers/BannerController.js";
+import validate from "../middlewares/validate.js";
+import {
+    createBannerSchema,
+    updateBannerSchema,
+    toggleStatusSchema
+} from "../validations/banner.validation.js";
 
 const router = express.Router();
 
+// Public routes
 router.get("/", getAllBanners);
-router.get("/detail/:id", getBannerById);
+router.get("/:id", getBannerById);
 
+// Protected routes
 router.use(verifyToken);
 router.use(isAdmin);
 
-router.get("/trashed", getTrashedBanners);
-router.post("/create", createBanner);
-router.put("/update/:id", updateBanner);
-router.delete("/delete/:id", deleteBanner);
-router.put("/restore/:id", restoreBanner);
-router.put("/toggle-status/:id", toggleBannerStatus);
+router.post("/", validate(createBannerSchema), createBanner);
+router.put("/:id", validate(updateBannerSchema), updateBanner);
+router.delete("/:id", deleteBanner);
+router.patch("/:id/restore", restoreBanner);
+router.patch("/:id/toggle-status", validate(toggleStatusSchema), toggleBannerStatus);
+router.get("/trashed/all", getTrashedBanners);
 
 export default router;

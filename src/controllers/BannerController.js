@@ -97,25 +97,7 @@ const createBanner = handleAsync(async (req, res, next) => {
         end_date 
     } = req.body;
     
-    if (!image_url) {
-        return next(createError(400, message.BANNER.IMAGE_URL_REQUIRED));
-    }
-    
-    if (title && title.length > 100) {
-        return next(createError(400, message.BANNER.TITLE_TOO_LONG));
-    }
-    
-    if (image_url && image_url.length > 255) {
-        return next(createError(400, message.BANNER.IMAGE_URL_TOO_LONG));
-    }
-    
-    if (link_url && link_url.length > 255) {
-        return next(createError(400, message.BANNER.LINK_URL_TOO_LONG));
-    }
-    
-    if (position && position.length > 50) {
-        return next(createError(400, message.BANNER.POSITION_TOO_LONG));
-    }
+    // Validation đã được xử lý bởi middleware validate
     
     const newBanner = await Banner.create({
         title,
@@ -152,21 +134,7 @@ const updateBanner = handleAsync(async (req, res, next) => {
         return next(createError(400, message.BANNER.CANNOT_UPDATE_DELETED));
     }
     
-    if (updateData.title && updateData.title.length > 100) {
-        return next(createError(400, message.BANNER.TITLE_TOO_LONG));
-    }
-    
-    if (updateData.image_url && updateData.image_url.length > 255) {
-        return next(createError(400, message.BANNER.IMAGE_URL_TOO_LONG));
-    }
-    
-    if (updateData.link_url && updateData.link_url.length > 255) {
-        return next(createError(400, message.BANNER.LINK_URL_TOO_LONG));
-    }
-    
-    if (updateData.position && updateData.position.length > 50) {
-        return next(createError(400, message.BANNER.POSITION_TOO_LONG));
-    }
+    // Validation đã được xử lý bởi middleware validate
     
     updateData.updated_at = Date.now();
     
