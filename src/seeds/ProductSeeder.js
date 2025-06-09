@@ -36,6 +36,7 @@ const seedProducts = async (count = 20) => {
         description: faker.commerce.productDescription(),
         price: parseFloat(faker.commerce.price({ min: 1000000, max: 30000000 })),
         stock_quantity: faker.number.int({ min: 5, max: 100 }),
+        status: faker.helpers.arrayElement(['active', 'inactive', 'out_of_stock', 'discontinued']),
         category_id: randomCategory._id,
         color_id: randomColor._id,
         storage_id: randomStorage._id,

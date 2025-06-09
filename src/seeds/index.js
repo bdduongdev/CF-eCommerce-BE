@@ -8,6 +8,7 @@ import seedProducts from "./ProductSeeder.js";
 import seedBanners from "./BannerSeeder.js";
 import seedDiscounts from "./DiscountSeeder.js";
 import seedOrders from "./OrderSeeder.js";
+import seedReviews from "./ReviewSeeder.js";
 import "../models/PasswordResetToken.js";
 
 const seedAll = async () => {
@@ -20,7 +21,7 @@ const seedAll = async () => {
     
     // Seed dữ liệu cơ bản trước
     await seedCategories(10);
-    await seedUsers(10);
+    // await seedUsers(10);
     await seedStorages(5);
     await seedColors(6);
     
@@ -29,6 +30,7 @@ const seedAll = async () => {
     await seedBanners(5);
     await seedDiscounts(10);
     await seedOrders(15);
+    await seedReviews(50);
     
     console.log("Đã hoàn thành việc seed dữ liệu");
     process.exit(0);

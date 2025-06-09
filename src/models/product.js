@@ -19,6 +19,11 @@ const ProductSchema = new Schema({
     required: true,
     default: 0
   },
+  status: {
+    type: String,
+    enum: ['active', 'inactive', 'out_of_stock', 'discontinued'],
+    default: 'active'
+  },
   category_id: {
     type: Schema.Types.ObjectId,
     ref: 'Category'
