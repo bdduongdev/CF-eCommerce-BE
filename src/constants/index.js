@@ -136,6 +136,9 @@ const message = {
         ALREADY_DELETED: "Banner này đã bị xóa trước đó",
         NOT_DELETED: "Banner này chưa bị xóa",
         CANNOT_UPDATE_DELETED: "Không thể cập nhật banner đã bị xóa"
+    },
+    REVIEW: {
+        GET_ALL_SUCCESS: "Lấy danh sách đánh giá thành công",
     }
 };
 
