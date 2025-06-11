@@ -9,9 +9,6 @@ const WishlistSchema = new Schema({
   created_at: {
     type: Date,
     default: Date.now
-  },
-  note: {
-    type: String
   }
 }, {
   timestamps: { createdAt: 'created_at' }

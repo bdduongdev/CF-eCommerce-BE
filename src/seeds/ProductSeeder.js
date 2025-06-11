@@ -2,52 +2,133 @@ import Product from "../models/Product.js";
 import Category from "../models/Category.js";
 import ProductColor from "../models/ProductColor.js";
 import ProductStorage from "../models/ProductStorage.js";
-import { faker } from '@faker-js/faker';
 import mongoose from "mongoose";
 
-const seedProducts = async (count = 20) => {
+const seedProducts = async () => {
   try {
     await Product.deleteMany();
     console.log("Đã xóa dữ liệu Product cũ");
 
-    // Lấy danh sách categories, colors và storages từ database
     const categories = await Category.find();
     const colors = await ProductColor.find();
     const storages = await ProductStorage.find();
 
-    // Kiểm tra xem có đủ dữ liệu để tạo sản phẩm không
     if (categories.length === 0 || colors.length === 0 || storages.length === 0) {
       console.log("Không đủ dữ liệu categories, colors hoặc storages để tạo sản phẩm");
       return false;
     }
 
-    const products = [];
+    let iphoneCategory = categories.find(c => c.category_name.toLowerCase().includes('iphone'));
+    if (!iphoneCategory) {
+      iphoneCategory = categories[0];
+    }
 
-    for (let i = 0; i < count; i++) {
-      const randomCategory = categories[Math.floor(Math.random() * categories.length)];
-      const randomColor = colors[Math.floor(Math.random() * colors.length)];
-      const randomStorage = storages[Math.floor(Math.random() * storages.length)];
-      
-      const now = new Date();
-      const productName = faker.commerce.productName();
-      
-      products.push({
-        product_name: productName,
-        description: faker.commerce.productDescription(),
-        price: parseFloat(faker.commerce.price({ min: 1000000, max: 30000000 })),
-        stock_quantity: faker.number.int({ min: 5, max: 100 }),
-        status: faker.helpers.arrayElement(['active', 'inactive', 'out_of_stock', 'discontinued']),
-        category_id: randomCategory._id,
-        color_id: randomColor._id,
-        storage_id: randomStorage._id,
-        image_url: faker.image.url(),
-        created_at: now,
-        updated_at: now
-      });
+    const iPhoneModels = [
+      {
+        name: "iPhone 13",
+        basePrice: 15990000,
+        description: "iPhone 13 với màn hình Super Retina XDR 6.1 inch, chip A15 Bionic mạnh mẽ và hệ thống camera kép tiên tiến."
+      },
+      {
+        name: "iPhone 13 Mini",
+        basePrice: 13990000,
+        description: "iPhone 13 Mini với màn hình Super Retina XDR 5.4 inch, chip A15 Bionic và thiết kế nhỏ gọn."
+      },
+      {
+        name: "iPhone 13 Pro",
+        basePrice: 21990000,
+        description: "iPhone 13 Pro với màn hình ProMotion 120Hz, chip A15 Bionic, hệ thống camera Pro và thời lượng pin dài hơn."
+      },
+      {
+        name: "iPhone 13 Pro Max",
+        basePrice: 23990000,
+        description: "iPhone 13 Pro Max với màn hình ProMotion 6.7 inch, chip A15 Bionic, hệ thống camera Pro và thời lượng pin cực dài."
+      },
+      {
+        name: "iPhone 14",
+        basePrice: 19990000,
+        description: "iPhone 14 với màn hình Super Retina XDR 6.1 inch, chip A15 Bionic, camera nâng cấp và các tính năng an toàn mới."
+      },
+      {
+        name: "iPhone 14 Plus",
+        basePrice: 21990000,
+        description: "iPhone 14 Plus với màn hình Super Retina XDR 6.7 inch, chip A15 Bionic, camera nâng cấp và pin dài hơn."
+      },
+      {
+        name: "iPhone 14 Pro",
+        basePrice: 25990000,
+        description: "iPhone 14 Pro với Dynamic Island, màn hình Always-On, camera 48MP và chip A16 Bionic mạnh mẽ nhất."
+      },
+      {
+        name: "iPhone 14 Pro Max",
+        basePrice: 28990000,
+        description: "iPhone 14 Pro Max với Dynamic Island, màn hình Always-On 6.7 inch, camera 48MP và pin dài nhất."
+      },
+      {
+        name: "iPhone 15",
+        basePrice: 22990000,
+        description: "iPhone 15 với thiết kế Dynamic Island, cổng USB-C, camera 48MP và chip A16 Bionic mạnh mẽ."
+      },
+      {
+        name: "iPhone 15 Plus",
+        basePrice: 24990000,
+        description: "iPhone 15 Plus với màn hình 6.7 inch, cổng USB-C, camera 48MP và thời lượng pin cực dài."
+      },
+      {
+        name: "iPhone 15 Pro",
+        basePrice: 28990000,
+        description: "iPhone 15 Pro với khung titan, chip A17 Pro, cổng USB-C tốc độ cao và hệ thống camera chuyên nghiệp."
+      },
+      {
+        name: "iPhone 15 Pro Max",
+        basePrice: 33990000,
+        description: "iPhone 15 Pro Max với khung titan, màn hình 6.7 inch, camera tele 5x và hiệu suất chơi game đỉnh cao."
+      }
+    ];
+
+    // URL ảnh mặc định cho tất cả sản phẩm
+    const defaultImageUrl = "/uploads/products/default-product.jpg";
+
+    const products = [];
+    const now = new Date();
+
+    for (const model of iPhoneModels) {
+      for (const color of colors) {
+        for (const storage of storages) {
+          const totalPrice = model.basePrice + color.price + storage.price;
+          
+          const stockQuantity = Math.floor(Math.random() * 50) + 5;
+          
+          let status = 'active';
+          if (stockQuantity === 0) {
+            status = 'out_of_stock';
+          } else if (Math.random() < 0.1) {
+            status = 'inactive';
+          } else if (Math.random() < 0.05) {
+            status = 'discontinued';
+          }
+
+          const productName = `${model.name} ${color.color_name} ${storage.storage_name}`;
+          
+          products.push({
+            product_name: productName,
+            description: model.description,
+            price: totalPrice,
+            stock_quantity: stockQuantity,
+            status: status,
+            category_id: iphoneCategory._id,
+            color_id: color._id,
+            storage_id: storage._id,
+            image_url: defaultImageUrl,
+            created_at: now,
+            updated_at: now
+          });
+        }
+      }
     }
 
     await Product.insertMany(products);
-    console.log(`Đã thêm ${products.length} sản phẩm mẫu`);
+    console.log(`Đã thêm ${products.length} sản phẩm iPhone mẫu`);
     
     return true;
   } catch (error) {

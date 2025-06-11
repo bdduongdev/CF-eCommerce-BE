@@ -6,6 +6,8 @@ import ProductStorageRoutes from "./ProductStorageRoutes.js";
 import BannerRoutes from "./BannerRoutes.js";
 import CategoryRoutes from "./CategoryRoutes.js";
 import ReviewRoutes from "./ReviewRoutes.js";
+import WishlistRoutes from "./WishlistRoutes.js";
+import ProfileRoutes from "./ProfileRoutes.js";
 
 const router = express.Router();
 
@@ -16,5 +18,7 @@ router.use("/storages", ProductStorageRoutes);
 router.use("/banners", BannerRoutes);
 router.use("/categories", CategoryRoutes);
 router.use("/reviews", ReviewRoutes);
+router.use("/wishlist", WishlistRoutes);
+router.use("/profile", ProfileRoutes);
 
 export default router;

@@ -3,6 +3,8 @@ import createError from "../utils/createError.js";
 import handleAsync from "../utils/handleAsync.js";
 import mongoose from "mongoose";
 import message from "../constants/index.js";
+import fs from 'fs';
+import path from 'path';
 
 const getAllProducts = handleAsync(async (req, res, next) => {
     const { category, search, minPrice, maxPrice, sort, limit = 10, page = 1, status } = req.query;
@@ -141,7 +143,6 @@ const getProductById = handleAsync(async (req, res, next) => {
 });
 
 const createProduct = handleAsync(async (req, res, next) => {
-    // Validation is now handled by Joi middleware
     const { 
         product_name, 
         description, 
@@ -150,15 +151,18 @@ const createProduct = handleAsync(async (req, res, next) => {
         category_id, 
         color_id, 
         storage_id, 
-        image_url,
         status 
     } = req.body;
     
     try {
-        // Tự động set status thành out_of_stock nếu stock_quantity = 0
         let productStatus = status;
         if (stock_quantity === 0 && !status) {
             productStatus = 'out_of_stock';
+        }
+        
+        let image_url = "";
+        if (req.file) {
+            image_url = `/uploads/products/${req.file.filename}`;
         }
         
         const newProduct = await Product.create({
@@ -169,7 +173,7 @@ const createProduct = handleAsync(async (req, res, next) => {
             category_id,
             color_id,
             storage_id,
-            image_url: image_url || "",
+            image_url,
             status: productStatus || "active"
         });
         
@@ -179,6 +183,10 @@ const createProduct = handleAsync(async (req, res, next) => {
             message: message.PRODUCT.CREATE_SUCCESS
         });
     } catch (error) {
+        if (req.file) {
+            fs.unlinkSync(req.file.path);
+        }
+        
         if (error.name === 'ValidationError') {
             const messages = Object.values(error.errors).map(val => val.message);
             return next(createError(400, messages.join(', ')));
@@ -201,12 +209,21 @@ const updateProduct = handleAsync(async (req, res, next) => {
         return next(createError(404, message.PRODUCT.NOT_FOUND));
     }
     
-    // Tự động cập nhật status thành out_of_stock nếu stock_quantity = 0
     if (updateData.stock_quantity === 0 && !updateData.status) {
         updateData.status = 'out_of_stock';
     }
     
-    // Cập nhật thời gian cập nhật
+    if (req.file) {
+        if (product.image_url && product.image_url !== "") {
+            const oldImagePath = path.join(process.cwd(), product.image_url.replace(/^\//, ''));
+            if (fs.existsSync(oldImagePath)) {
+                fs.unlinkSync(oldImagePath);
+            }
+        }
+        
+        updateData.image_url = `/uploads/products/${req.file.filename}`;
+    }
+    
     updateData.updated_at = Date.now();
     
     const updatedProduct = await Product.findByIdAndUpdate(
@@ -239,7 +256,6 @@ const deleteProduct = handleAsync(async (req, res, next) => {
         return next(createError(400, message.PRODUCT.ALREADY_DELETED));
     }
     
-    // Cập nhật trạng thái xóa mềm
     await Product.findByIdAndUpdate(id, {
         is_deleted: true,
         updated_at: Date.now()
@@ -268,7 +284,6 @@ const restoreProduct = handleAsync(async (req, res, next) => {
         return next(createError(400, message.PRODUCT.NOT_DELETED));
     }
     
-    // Khôi phục sản phẩm
     await Product.findByIdAndUpdate(id, {
         is_deleted: false,
         updated_at: Date.now()
@@ -284,7 +299,7 @@ const searchProducts = handleAsync(async (req, res, next) => {
     const { q, limit = 10, page = 1, status } = req.query;
     
     if (!q) {
-        return next(createError(400, "Từ khóa tìm kiếm là bắt buộc"));
+        return next(createError(400, message.PRODUCT.SEARCH_REQUIRED));
     }
     
     const query = {
@@ -306,7 +321,6 @@ const searchProducts = handleAsync(async (req, res, next) => {
         .populate('color_id', 'color_name price')
         .populate('storage_id', 'storage_name price');
     
-    // Calculate total price including variants
     const productsWithTotalPrice = products.map(product => {
         const productObj = product.toObject();
         const basePrice = productObj.price || 0;
@@ -329,11 +343,10 @@ const searchProducts = handleAsync(async (req, res, next) => {
                 totalPages: Math.ceil(total / parseInt(limit))
             }
         },
-        message: "Tìm kiếm sản phẩm thành công"
+        message: message.PRODUCT.SEARCH_SUCCESS
     });
 });
 
-// Thêm hàm updateProductStatus
 const updateProductStatus = handleAsync(async (req, res, next) => {
     const { id } = req.params;
     const { status } = req.body;
@@ -344,7 +357,7 @@ const updateProductStatus = handleAsync(async (req, res, next) => {
     
     const validStatuses = ['active', 'inactive', 'out_of_stock', 'discontinued'];
     if (!validStatuses.includes(status)) {
-        return next(createError(400, "Trạng thái không hợp lệ"));
+        return next(createError(400, message.PRODUCT.INVALID_STATUS));
     }
     
     const product = await Product.findById(id);
@@ -362,7 +375,7 @@ const updateProductStatus = handleAsync(async (req, res, next) => {
     res.status(200).json({
         success: true,
         data: updatedProduct,
-        message: "Cập nhật trạng thái sản phẩm thành công"
+        message: message.PRODUCT.UPDATE_STATUS_SUCCESS
     });
 });
 

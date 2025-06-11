@@ -19,9 +19,6 @@ const InventorySchema = new Schema({
   stock_after_change: {
     type: Number
   },
-  note: {
-    type: String
-  },
   changed_at: {
     type: Date,
     default: Date.now

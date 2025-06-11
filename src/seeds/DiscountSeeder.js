@@ -7,7 +7,6 @@ const seedDiscounts = async (count = 10) => {
     await Discount.deleteMany();
     console.log("Đã xóa dữ liệu Discount cũ");
 
-    // Lấy danh sách sản phẩm từ database
     const products = await Product.find();
 
     if (products.length === 0) {
@@ -25,12 +24,11 @@ const seedDiscounts = async (count = 10) => {
       const startDate = faker.date.recent();
       const endDate = faker.date.future({ refDate: startDate });
       
-      // Giá trị giảm giá phù hợp với loại giảm giá
       let discountValue;
       if (discountType === 'percentage') {
-        discountValue = faker.number.int({ min: 5, max: 50 }); // 5% đến 50%
+        discountValue = faker.number.int({ min: 5, max: 50 });
       } else {
-        discountValue = faker.number.int({ min: 100000, max: 2000000 }); // 100,000 đến 2,000,000 VND
+        discountValue = faker.number.int({ min: 100000, max: 2000000 });
       }
 
       discounts.push({
