@@ -5,6 +5,8 @@ import mongoose from "mongoose";
 import message from "../constants/index.js";
 import fs from "fs";
 import path from "path";
+import ProductColor from "../models/ProductColor.js";
+import ProductStorage from "../models/ProductStorage.js";
 
 const getAllProducts = handleAsync(async (req, res, next) => {
   const {
@@ -154,6 +156,7 @@ const getProductById = handleAsync(async (req, res, next) => {
 const createProduct = handleAsync(async (req, res, next) => {
   const {
     product_name,
+    slug,
     description,
     price,
     stock_quantity,
@@ -174,8 +177,15 @@ const createProduct = handleAsync(async (req, res, next) => {
       image_url = `/uploads/products/${req.file.filename}`;
     }
 
+    // Generate slug from product_name if not provided
+    let productSlug = slug;
+    if (!productSlug && product_name) {
+      productSlug = product_name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+    }
+
     const newProduct = await Product.create({
       product_name,
+      slug: productSlug,
       description: description || "",
       price,
       stock_quantity: stock_quantity || 0,
@@ -220,6 +230,11 @@ const updateProduct = handleAsync(async (req, res, next) => {
 
   if (updateData.stock_quantity === 0 && !updateData.status) {
     updateData.status = "out_of_stock";
+  }
+
+  // Generate slug from product_name if product_name is updated and slug is not provided
+  if (updateData.product_name && !updateData.slug) {
+    updateData.slug = updateData.product_name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
   }
 
   if (req.file) {
@@ -390,6 +405,77 @@ const updateProductStatus = handleAsync(async (req, res, next) => {
   });
 });
 
+const getProductBySlug = handleAsync(async (req, res, next) => {
+  const { slug } = req.params;
+  const { storage, color } = req.query;
+
+  // Find the product by slug
+  const product = await Product.findOne({
+    slug: slug,
+    is_deleted: false
+  }).populate("category_id", "category_name");
+
+  if (!product) {
+    return next(createError(404, "Không tìm thấy sản phẩm"));
+  }
+
+  // Get all available colors for this product
+  const colors = await ProductColor.find({ is_deleted: false });
+  
+  // Get all available storage options for this product
+  const storages = await ProductStorage.find({ is_deleted: false });
+  
+  // Create all possible variants by combining colors and storages
+  const variants = [];
+  for (const colorOption of colors) {
+    for (const storageOption of storages) {
+      variants.push({
+        storage: storageOption.storage_name,
+        color: colorOption.color_name,
+        price: product.price + colorOption.price + storageOption.price,
+        image: product.image_url, // Using the base product image - you might want to have color-specific images
+        color_id: colorOption._id,
+        storage_id: storageOption._id
+      });
+    }
+  }
+
+  // Find the selected variant based on query parameters
+  let selectedVariant = null;
+  if (storage && color) {
+    selectedVariant = variants.find(
+      variant => 
+        variant.storage.toLowerCase() === storage.toLowerCase() &&
+        variant.color.toLowerCase() === color.toLowerCase()
+    );
+  }
+
+  // Format the response
+  const productResponse = {
+    _id: product._id,
+    name: product.product_name,
+    slug: product.slug,
+    description: product.description,
+    base_price: product.price,
+    stock_quantity: product.stock_quantity,
+    status: product.status,
+    category: product.category_id,
+    image_url: product.image_url,
+    created_at: product.created_at,
+    updated_at: product.updated_at
+  };
+
+  res.status(200).json({
+    success: true,
+    data: {
+      product: productResponse,
+      variants: variants,
+      selectedVariant: selectedVariant
+    },
+    message: "Lấy thông tin sản phẩm thành công"
+  });
+});
+
 export {
   getAllProducts,
   getTrashedProducts,
@@ -400,4 +486,5 @@ export {
   restoreProduct,
   searchProducts,
   updateProductStatus,
+  getProductBySlug
 };

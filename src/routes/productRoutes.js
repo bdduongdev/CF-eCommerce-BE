@@ -9,7 +9,8 @@ import {
     getTrashedProducts,
     restoreProduct,
     searchProducts,
-    updateProductStatus
+    updateProductStatus,
+    getProductBySlug
 } from "../controllers/ProductController.js";
 import validate from "../middlewares/validate.js";
 import { createProductSchema, updateProductSchema, updateProductStatusSchema } from "../validations/product.validation.js";
@@ -20,6 +21,7 @@ const router = express.Router();
 router.get("/", getAllProducts);
 router.get("/search", searchProducts);
 router.get("/show/:id", getProductById);
+router.get("/:slug", getProductBySlug);
 
 router.use(verifyToken);
 

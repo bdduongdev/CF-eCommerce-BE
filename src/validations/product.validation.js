@@ -14,6 +14,9 @@ export const createProductSchema = Joi.object({
     'string.max': 'Tên sản phẩm không được vượt quá 100 ký tự',
     'any.required': 'Tên sản phẩm là bắt buộc'
   }),
+  slug: Joi.string().max(100).messages({
+    'string.max': 'Slug không được vượt quá 100 ký tự'
+  }),
   description: Joi.string().allow(''),
   price: Joi.number().required().min(0).messages({
     'number.base': 'Giá phải là số',
@@ -44,6 +47,9 @@ export const createProductSchema = Joi.object({
 export const updateProductSchema = Joi.object({
   product_name: Joi.string().max(100).messages({
     'string.max': 'Tên sản phẩm không được vượt quá 100 ký tự'
+  }),
+  slug: Joi.string().max(100).messages({
+    'string.max': 'Slug không được vượt quá 100 ký tự'
   }),
   description: Joi.string().allow(''),
   price: Joi.number().min(0).messages({

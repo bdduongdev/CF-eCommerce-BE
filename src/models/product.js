@@ -7,6 +7,11 @@ const ProductSchema = new Schema({
     required: true,
     maxlength: 100
   },
+  slug: {
+    type: String,
+    lowercase: true,
+    unique: true
+  },
   description: {
     type: String
   },
@@ -55,6 +60,14 @@ const ProductSchema = new Schema({
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
   indexes: [{ key: { is_deleted: 1 } }]
+});
+
+// Pre-save hook to generate slug from product_name if not provided
+ProductSchema.pre('save', function(next) {
+  if (!this.slug && this.product_name) {
+    this.slug = this.product_name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+  }
+  next();
 });
 
 export default mongoose.model('Product', ProductSchema);
