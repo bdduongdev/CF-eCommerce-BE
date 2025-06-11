@@ -4,3 +4,5 @@ dist
 node_modules
 .env
 .DS_Store
+uploads/products/*
+!uploads/products/.gitkeep

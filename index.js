@@ -7,7 +7,12 @@ import cors from "cors";
 import { PORT } from "./src/configs/enviroments.js";
 import jsonValid from "./src/middlewares/jsonInvalid.js";
 import setupSwagger from "./src/configs/swaggerConfig.js";
+import path from "path";
+import { fileURLToPath } from "url";
 import "./src/models/index.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
@@ -21,6 +26,9 @@ app.use(
 		// Them cac cau hinh can thiet
 	})
 );
+
+// Serve static files from uploads directory
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 setupSwagger(app);
 

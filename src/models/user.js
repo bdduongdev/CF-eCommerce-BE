@@ -22,9 +22,44 @@ const UserSchema = new mongoose.Schema({
         type: String,
         trim: true
     },
+    avatar: {
+        type: String,
+        default: "/images/avatars/default-avatar.png"
+    },
+    dateOfBirth: {
+        type: Date
+    },
+    gender: {
+        type: String,
+        enum: ["male", "female", "other"],
+        default: "other"
+    },
     address: {
         type: String,
         trim: true
+    },
+    detailedAddress: {
+        street: {
+            type: String,
+            trim: true
+        },
+        ward: {
+            type: String,
+            trim: true
+        },
+        district: {
+            type: String,
+            trim: true
+        },
+        city: {
+            type: String,
+            trim: true
+        },
+        country: {
+            type: String,
+            default: "Việt Nam",
+            trim: true
+        }
     },
     role: {
         type: String,

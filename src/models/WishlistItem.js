@@ -13,9 +13,6 @@ const WishlistItemSchema = new Schema({
   added_at: {
     type: Date,
     default: Date.now
-  },
-  note: {
-    type: String
   }
 }, {
   timestamps: { createdAt: 'added_at' }

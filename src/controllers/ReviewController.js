@@ -56,4 +56,38 @@ const getAllReviews = handleAsync(async (req, res, next) => {
     });
 });
 
-export { getAllReviews };
+const createReview = handleAsync(async (req, res, next) => {
+    const { product_id, rating, comment } = req.body;
+    const user_id = req.user.id;
+
+    if (!product_id || !rating) {
+        return next(createError(400, "Sản phẩm và đánh giá là bắt buộc"));
+    }
+
+    // Check if user has already reviewed this product
+    const existingReview = await Review.findOne({ user_id, product_id });
+    if (existingReview) {
+        return next(createError(400, "Bạn đã đánh giá sản phẩm này rồi"));
+    }
+
+    const review = new Review({
+        user_id,
+        product_id,
+        rating,
+        comment
+    });
+
+    await review.save();
+
+    const populatedReview = await Review.findById(review._id)
+        .populate('user_id', 'fullname email')
+        .populate('product_id', 'product_name');
+
+    res.status(201).json({
+        success: true,
+        data: populatedReview,
+        message: message.REVIEW?.CREATE_SUCCESS || "Thêm đánh giá thành công"
+    });
+});
+
+export { getAllReviews, createReview };

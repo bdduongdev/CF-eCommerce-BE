@@ -66,7 +66,12 @@ const message = {
         STORAGE_ID_INVALID: "ID bộ nhớ không hợp lệ",
         IMAGE_URL_TOO_LONG: "URL hình ảnh không được vượt quá 255 ký tự",
         ALREADY_DELETED: "Sản phẩm này đã bị xóa trước đó",
-        NOT_DELETED: "Sản phẩm này chưa bị xóa"
+        NOT_DELETED: "Sản phẩm này chưa bị xóa",
+        INVALID_STATUS: "Trạng thái không hợp lệ",
+        UPDATE_STATUS_SUCCESS: "Cập nhật trạng thái sản phẩm thành công",
+        SEARCH_REQUIRED: "Từ khóa tìm kiếm là bắt buộc",
+        NOT_FOUND: "Không tìm thấy sản phẩm",
+        SEARCH_SUCCESS: "Tìm kiếm sản phẩm thành công"
     },
     PRODUCT_COLOR: {
         GET_ALL_SUCCESS: "Lấy danh sách màu sắc thành công",
