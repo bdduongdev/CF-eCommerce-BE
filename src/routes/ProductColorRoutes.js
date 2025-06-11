@@ -1,18 +1,18 @@
 import express from "express";
 import { verifyToken, isAdmin } from "../middlewares/auth.js";
 import {
-    getAllColors,
-    getColorById,
-    createColor,
-    updateColor,
-    deleteColor,
-    getTrashedColors,
-    restoreColor
+  getAllColors,
+  getColorById,
+  createColor,
+  updateColor,
+  deleteColor,
+  getTrashedColors,
+  restoreColor,
 } from "../controllers/ProductColorController.js";
 import validate from "../middlewares/validate.js";
 import {
-    createColorSchema,
-    updateColorSchema
+  createColorSchema,
+  updateColorSchema,
 } from "../validations/productColor.validation.js";
 
 const router = express.Router();

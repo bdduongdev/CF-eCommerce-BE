@@ -7,7 +7,6 @@ const seedOrders = async (count = 15) => {
     await Order.deleteMany();
     console.log("Đã xóa dữ liệu Order cũ");
 
-    // Lấy danh sách người dùng từ database (chỉ lấy customer)
     const customers = await User.find({ role: "customer" });
 
     if (customers.length === 0) {

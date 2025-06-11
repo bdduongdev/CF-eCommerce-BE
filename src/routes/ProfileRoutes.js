@@ -1,10 +1,10 @@
 import express from "express";
-import { verifyToken, isAdmin, isCustomer, isAdminOrCustomer } from "../middlewares/auth.js";
-import { 
-    getProfile,
-    updateProfile,
-    updatePassword,
-    updateAvatar
+import { verifyToken, isAdminOrCustomer } from "../middlewares/auth.js";
+import {
+  getProfile,
+  updateProfile,
+  updatePassword,
+  updateAvatar,
 } from "../controllers/ProfileController.js";
 import validate from "../middlewares/validate.js";
 
