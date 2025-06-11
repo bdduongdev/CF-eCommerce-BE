@@ -2,7 +2,6 @@ import User from "../models/User.js";
 import bcrypt from "bcrypt";
 import { faker } from '@faker-js/faker';
 
-// Hàm seed người dùng
 const seedUsers = async (count = 10) => {
   try {
     await User.deleteMany();
@@ -13,7 +12,6 @@ const seedUsers = async (count = 10) => {
 
     const users = [];
 
-    // Admin user
     users.push({
       fullname: "Admin User",
       email: "admin@gmail.com",
@@ -35,7 +33,6 @@ const seedUsers = async (count = 10) => {
       updated_at: new Date()
     });
 
-    // Customer users
     for (let i = 0; i < count - 1; i++) {
       const firstName = faker.person.firstName();
       const lastName = faker.person.lastName();

@@ -1,18 +1,18 @@
 import express from "express";
 import { verifyToken, isAdmin } from "../middlewares/auth.js";
 import {
-    getAllCategories,
-    getTrashedCategories,
-    getCategoryById,
-    createCategory,
-    updateCategory,
-    deleteCategory,
-    restoreCategory
+  getAllCategories,
+  getTrashedCategories,
+  getCategoryById,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+  restoreCategory,
 } from "../controllers/CategoryController.js";
 import validate from "../middlewares/validate.js";
 import {
-    createCategorySchema,
-    updateCategorySchema
+  createCategorySchema,
+  updateCategorySchema,
 } from "../validations/category.validation.js";
 
 const router = express.Router();

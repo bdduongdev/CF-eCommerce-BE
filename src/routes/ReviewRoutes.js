@@ -1,8 +1,8 @@
 import express from "express";
-import { verifyToken, isAdmin, isCustomer, isAdminOrCustomer } from "../middlewares/auth.js";
-import { 
-    getAllReviews,
-    createReview
+import { verifyToken, isCustomer } from "../middlewares/auth.js";
+import {
+  getAllReviews,
+  createReview,
 } from "../controllers/ReviewController.js";
 import validate from "../middlewares/validate.js";
 

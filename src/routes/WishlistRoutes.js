@@ -1,8 +1,8 @@
 import express from "express";
-import { verifyToken, isAdmin, isCustomer, isAdminOrCustomer } from "../middlewares/auth.js";
-import { 
-    addToWishlist,
-    getWishlistItems
+import { verifyToken, isCustomer } from "../middlewares/auth.js";
+import {
+  addToWishlist,
+  getWishlistItems,
 } from "../controllers/WishlistController.js";
 import validate from "../middlewares/validate.js";
 
