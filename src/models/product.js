@@ -44,7 +44,12 @@ const ProductSchema = new Schema({
   },
   image_url: {
     type: String,
-    maxlength: 255
+    maxlength: 255,
+    default: "/uploads/products/default-product.jpg"
+  },
+  image_gallery: {
+    type: [String],
+    default: []
   },
   is_deleted: {
     type: Boolean,
