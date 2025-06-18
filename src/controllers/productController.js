@@ -61,7 +61,6 @@ const getAllProducts = handleAsync(async (req, res, next) => {
     .populate("color_id", "color_name price")
     .populate("storage_id", "storage_name price");
 
-  // Calculate total price including variants
   const productsWithTotalPrice = products.map((product) => {
     const productObj = product.toObject();
     const basePrice = productObj.price || 0;
@@ -103,7 +102,6 @@ const getTrashedProducts = handleAsync(async (req, res, next) => {
     .populate("color_id", "color_name price")
     .populate("storage_id", "storage_name price");
 
-  // Calculate total price including variants
   const productsWithTotalPrice = products.map((product) => {
     const productObj = product.toObject();
     const basePrice = productObj.price || 0;
@@ -142,7 +140,6 @@ const getProductById = handleAsync(async (req, res, next) => {
     return next(createError(404, message.PRODUCT.NOT_FOUND));
   }
 
-  // Calculate total price including variants
   const productObj = product.toObject();
   const basePrice = productObj.price || 0;
   const colorPrice = productObj.color_id?.price || 0;
@@ -180,7 +177,6 @@ const createProduct = handleAsync(async (req, res, next) => {
       image_url = `/uploads/products/${req.file.filename}`;
     }
 
-    // Generate slug from product_name if not provided
     let productSlug = slug;
     if (!productSlug && product_name) {
       productSlug = product_name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
@@ -235,7 +231,6 @@ const updateProduct = handleAsync(async (req, res, next) => {
     updateData.status = "out_of_stock";
   }
 
-  // Generate slug from product_name if product_name is updated and slug is not provided
   if (updateData.product_name && !updateData.slug) {
     updateData.slug = updateData.product_name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
   }
@@ -415,7 +410,6 @@ const getProductBySlug = handleAsync(async (req, res, next) => {
   const { slug } = req.params;
   const { storage, color } = req.query;
 
-  // Find the product by slug
   const product = await Product.findOne({
     slug: slug,
     is_deleted: false
@@ -425,13 +419,10 @@ const getProductBySlug = handleAsync(async (req, res, next) => {
     return next(createError(404, "Không tìm thấy sản phẩm"));
   }
 
-  // Get all available colors for this product
   const colors = await ProductColor.find({ is_deleted: false });
   
-  // Get all available storage options for this product
   const storages = await ProductStorage.find({ is_deleted: false });
   
-  // Create all possible variants by combining colors and storages
   const variants = [];
   for (const colorOption of colors) {
     for (const storageOption of storages) {
@@ -439,14 +430,13 @@ const getProductBySlug = handleAsync(async (req, res, next) => {
         storage: storageOption.storage_name,
         color: colorOption.color_name,
         price: product.price + colorOption.price + storageOption.price,
-        image: product.image_url, // Using the base product image - you might want to have color-specific images
+        image: product.image_url,
         color_id: colorOption._id,
         storage_id: storageOption._id
       });
     }
   }
 
-  // Find the selected variant based on query parameters
   let selectedVariant = null;
   if (storage && color) {
     selectedVariant = variants.find(
@@ -456,7 +446,6 @@ const getProductBySlug = handleAsync(async (req, res, next) => {
     );
   }
 
-  // Format the response
   const productResponse = {
     _id: product._id,
     name: product.product_name,
