@@ -8,6 +8,7 @@ import CategoryRoutes from "./CategoryRoutes.js";
 import ReviewRoutes from "./ReviewRoutes.js";
 import WishlistRoutes from "./WishlistRoutes.js";
 import ProfileRoutes from "./ProfileRoutes.js";
+import UserRoutes from "./UserRoutes.js";
 
 const router = express.Router();
 
@@ -20,5 +21,6 @@ router.use("/categories", CategoryRoutes);
 router.use("/reviews", ReviewRoutes);
 router.use("/wishlist", WishlistRoutes);
 router.use("/profile", ProfileRoutes);
+router.use("/users", UserRoutes);
 
 export default router;

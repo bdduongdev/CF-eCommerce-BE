@@ -10,7 +10,8 @@ const ProductSchema = new Schema({
   slug: {
     type: String,
     lowercase: true,
-    unique: true
+    unique: true,
+    index: true
   },
   description: {
     type: String
@@ -59,7 +60,10 @@ const ProductSchema = new Schema({
   }
 }, {
   timestamps: { createdAt: 'created_at', updatedAt: 'updated_at' },
-  indexes: [{ key: { is_deleted: 1 } }]
+  indexes: [
+    { key: { is_deleted: 1 } },
+    { key: { slug: 1 } }
+  ]
 });
 
 // Pre-save hook to generate slug from product_name if not provided

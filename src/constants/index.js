@@ -46,6 +46,18 @@ const message = {
         PASSWORD_RESET_SUCCESS: "Mật khẩu đã được đặt lại thành công",
         NOT_LOGGED_IN: "Bạn chưa đăng nhập"
     },
+    USER: {
+        GET_ALL_SUCCESS: "Lấy danh sách người dùng thành công",
+        GET_BY_ID_SUCCESS: "Lấy thông tin người dùng thành công",
+        CREATE_SUCCESS: "Tạo người dùng mới thành công",
+        UPDATE_SUCCESS: "Cập nhật người dùng thành công",
+        DELETE_SUCCESS: "Xóa người dùng thành công",
+        CHANGE_ROLE_SUCCESS: "Thay đổi vai trò người dùng thành công",
+        NOT_FOUND: "Không tìm thấy người dùng",
+        EMAIL_IN_USE: "Email này đã được sử dụng",
+        INVALID_ROLE: "Vai trò không hợp lệ",
+        INVALID_ID: "ID người dùng không hợp lệ"
+    },
     PRODUCT: {
         GET_ALL_SUCCESS: "Lấy danh sách sản phẩm thành công",
         GET_TRASHED_SUCCESS: "Lấy danh sách sản phẩm đã xóa mềm thành công",
