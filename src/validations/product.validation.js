@@ -75,12 +75,18 @@ export const updateProductSchema = Joi.object({
   image_url: Joi.string().max(255).allow('').messages({
     'string.max': 'URL hình ảnh không được vượt quá 255 ký tự'
   })
-}).min(1); // Require at least one field to be present
-
-// Schema cho việc cập nhật trạng thái sản phẩm
+}).min(1);
+  
 export const updateProductStatusSchema = Joi.object({
   status: Joi.string().valid('active', 'inactive', 'out_of_stock', 'discontinued').required().messages({
     'any.required': 'Trạng thái sản phẩm là bắt buộc',
     'any.only': 'Trạng thái sản phẩm không hợp lệ'
+  })
+});
+
+export const deleteProductImageSchema = Joi.object({
+  image_url: Joi.string().required().messages({
+    'string.empty': 'URL hình ảnh là bắt buộc',
+    'any.required': 'URL hình ảnh là bắt buộc'
   })
 });

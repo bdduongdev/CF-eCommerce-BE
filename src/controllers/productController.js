@@ -8,6 +8,62 @@ import path from "path";
 import ProductColor from "../models/ProductColor.js";
 import ProductStorage from "../models/ProductStorage.js";
 
+// Helper function to convert relative image paths to full URLs
+const getFullImageUrl = (req, imagePath) => {
+  if (!imagePath) return null;
+  
+  // If the imagePath already has the protocol and host, return it as is
+  if (imagePath.startsWith('http')) {
+    return imagePath;
+  }
+  
+  // If imagePath starts with a slash, remove it
+  const normalizedPath = imagePath.startsWith('/') ? imagePath.substring(1) : imagePath;
+  
+  // Construct the full URL
+  return `${req.protocol}://${req.get('host')}/${normalizedPath}`;
+};
+
+// Helper function to process product images (for individual product)
+const processProductImages = (req, product) => {
+  if (!product) return product;
+  
+  const productObj = { ...product };
+  
+  // Convert main image URL to full URL
+  if (productObj.image_url) {
+    productObj.image_url = getFullImageUrl(req, productObj.image_url);
+  }
+  
+  // Convert gallery images to full URLs
+  if (productObj.image_gallery && Array.isArray(productObj.image_gallery)) {
+    productObj.image_gallery = productObj.image_gallery.map(img => getFullImageUrl(req, img));
+  }
+  
+  return productObj;
+};
+
+// Helper function to process multiple products
+const processProductsImages = (req, products) => {
+  if (!products || !Array.isArray(products)) return products;
+  
+  return products.map(product => {
+    const productObj = { ...product };
+    
+    // Convert main image URL to full URL
+    if (productObj.image_url) {
+      productObj.image_url = getFullImageUrl(req, productObj.image_url);
+    }
+    
+    // Convert gallery images to full URLs
+    if (productObj.image_gallery && Array.isArray(productObj.image_gallery)) {
+      productObj.image_gallery = productObj.image_gallery.map(img => getFullImageUrl(req, img));
+    }
+    
+    return productObj;
+  });
+};
+
 const getAllProducts = handleAsync(async (req, res, next) => {
   const {
     category,
@@ -70,12 +126,15 @@ const getAllProducts = handleAsync(async (req, res, next) => {
     return productObj;
   });
 
+  // Process image URLs to full URLs
+  const productsWithFullImageUrls = processProductsImages(req, productsWithTotalPrice);
+
   const total = await Product.countDocuments(query);
 
   res.status(200).json({
     success: true,
     data: {
-      products: productsWithTotalPrice,
+      products: productsWithFullImageUrls,
       pagination: {
         total,
         page: parseInt(page),
@@ -111,12 +170,15 @@ const getTrashedProducts = handleAsync(async (req, res, next) => {
     return productObj;
   });
 
+  // Process image URLs to full URLs
+  const productsWithFullImageUrls = processProductsImages(req, productsWithTotalPrice);
+
   const total = await Product.countDocuments(query);
 
   res.status(200).json({
     success: true,
     data: {
-      products: productsWithTotalPrice,
+      products: productsWithFullImageUrls,
       pagination: {
         total,
         page: parseInt(page),
@@ -145,10 +207,18 @@ const getProductById = handleAsync(async (req, res, next) => {
   const colorPrice = productObj.color_id?.price || 0;
   const storagePrice = productObj.storage_id?.price || 0;
   productObj.total_price = basePrice + colorPrice + storagePrice;
+  
+  // Ensure image_gallery is always an array
+  if (!productObj.image_gallery) {
+    productObj.image_gallery = [];
+  }
+
+  // Process image URLs to full URLs
+  const productWithFullImageUrls = processProductImages(req, productObj);
 
   res.status(200).json({
     success: true,
-    data: productObj,
+    data: productWithFullImageUrls,
     message: message.PRODUCT.GET_BY_ID_SUCCESS,
   });
 });
@@ -172,7 +242,7 @@ const createProduct = handleAsync(async (req, res, next) => {
       productStatus = "out_of_stock";
     }
 
-    let image_url = "";
+    let image_url = "/uploads/products/default-product.jpg";
     if (req.file) {
       image_url = `/uploads/products/${req.file.filename}`;
     }
@@ -192,12 +262,16 @@ const createProduct = handleAsync(async (req, res, next) => {
       color_id,
       storage_id,
       image_url,
+      image_gallery: image_url !== "/uploads/products/default-product.jpg" ? [image_url] : [],
       status: productStatus || "active",
     });
 
+    // Process image URLs to full URLs
+    const productWithFullImageUrls = processProductImages(req, newProduct.toObject());
+
     res.status(201).json({
       success: true,
-      data: newProduct,
+      data: productWithFullImageUrls,
       message: message.PRODUCT.CREATE_SUCCESS,
     });
   } catch (error) {
@@ -236,7 +310,10 @@ const updateProduct = handleAsync(async (req, res, next) => {
   }
 
   if (req.file) {
-    if (product.image_url && product.image_url !== "") {
+    // Remove old main image if it exists and is not the default image
+    if (product.image_url && 
+        product.image_url !== "" && 
+        product.image_url !== "/uploads/products/default-product.jpg") {
       const oldImagePath = path.join(
         process.cwd(),
         product.image_url.replace(/^\//, "")
@@ -247,6 +324,12 @@ const updateProduct = handleAsync(async (req, res, next) => {
     }
 
     updateData.image_url = `/uploads/products/${req.file.filename}`;
+    
+    // Also add to image gallery if not already there
+    const gallery = product.image_gallery || [];
+    if (!gallery.includes(updateData.image_url)) {
+      updateData.image_gallery = [...gallery, updateData.image_url];
+    }
   }
 
   updateData.updated_at = Date.now();
@@ -256,9 +339,12 @@ const updateProduct = handleAsync(async (req, res, next) => {
     runValidators: true,
   });
 
+  // Process image URLs to full URLs
+  const productWithFullImageUrls = processProductImages(req, updatedProduct.toObject());
+
   res.status(200).json({
     success: true,
-    data: updatedProduct,
+    data: productWithFullImageUrls,
     message: message.PRODUCT.UPDATE_SUCCESS,
   });
 });
@@ -357,12 +443,15 @@ const searchProducts = handleAsync(async (req, res, next) => {
     return productObj;
   });
 
+  // Process image URLs to full URLs
+  const productsWithFullImageUrls = processProductsImages(req, productsWithTotalPrice);
+
   const total = await Product.countDocuments(query);
 
   res.status(200).json({
     success: true,
     data: {
-      products: productsWithTotalPrice,
+      products: productsWithFullImageUrls,
       pagination: {
         total,
         page: parseInt(page),
@@ -430,7 +519,7 @@ const getProductBySlug = handleAsync(async (req, res, next) => {
         storage: storageOption.storage_name,
         color: colorOption.color_name,
         price: product.price + colorOption.price + storageOption.price,
-        image: product.image_url,
+        image: getFullImageUrl(req, product.image_url),
         color_id: colorOption._id,
         storage_id: storageOption._id
       });
@@ -455,7 +544,8 @@ const getProductBySlug = handleAsync(async (req, res, next) => {
     stock_quantity: product.stock_quantity,
     status: product.status,
     category: product.category_id,
-    image_url: product.image_url,
+    image_url: getFullImageUrl(req, product.image_url),
+    image_gallery: (product.image_gallery || []).map(img => getFullImageUrl(req, img)),
     created_at: product.created_at,
     updated_at: product.updated_at
   };
@@ -471,6 +561,171 @@ const getProductBySlug = handleAsync(async (req, res, next) => {
   });
 });
 
+const uploadProductImages = handleAsync(async (req, res, next) => {
+  const { id } = req.params;
+  
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return next(createError(400, message.PRODUCT.INVALID_ID));
+  }
+  
+  const product = await Product.findById(id);
+  
+  if (!product) {
+    return next(createError(404, message.PRODUCT.NOT_FOUND));
+  }
+  
+  if (!req.files || req.files.length === 0) {
+    return next(createError(400, "Vui lòng chọn ít nhất một hình ảnh để tải lên"));
+  }
+  
+  const imageUrls = [];
+  
+  // Process each uploaded file
+  req.files.forEach(file => {
+    imageUrls.push(`/uploads/products/${file.filename}`);
+  });
+  
+  // Add images to product's image gallery
+  let updatedImages = product.image_gallery || [];
+  updatedImages = [...updatedImages, ...imageUrls];
+  
+  // Update the product with new images
+  const updatedProduct = await Product.findByIdAndUpdate(
+    id,
+    { 
+      image_gallery: updatedImages,
+      updated_at: Date.now()
+    },
+    { new: true }
+  );
+  
+  // Process image URLs to full URLs
+  const productWithFullImageUrls = processProductImages(req, updatedProduct.toObject());
+  const uploadedImagesWithFullUrls = imageUrls.map(img => getFullImageUrl(req, img));
+  
+  res.status(200).json({
+    success: true,
+    message: "Tải lên hình ảnh sản phẩm thành công",
+    data: {
+      product: productWithFullImageUrls,
+      uploaded_images: uploadedImagesWithFullUrls
+    }
+  });
+});
+
+const updateProductMainImage = handleAsync(async (req, res, next) => {
+  const { id } = req.params;
+  
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return next(createError(400, message.PRODUCT.INVALID_ID));
+  }
+  
+  const product = await Product.findById(id);
+  
+  if (!product) {
+    return next(createError(404, message.PRODUCT.NOT_FOUND));
+  }
+  
+  if (!req.file) {
+    return next(createError(400, "Vui lòng chọn hình ảnh để tải lên"));
+  }
+  
+  // Remove old main image if it exists
+  if (product.image_url && product.image_url !== "" && product.image_url !== "/uploads/products/default-product.jpg") {
+    const oldImagePath = path.join(
+      process.cwd(),
+      product.image_url.replace(/^\//, "")
+    );
+    
+    if (fs.existsSync(oldImagePath)) {
+      fs.unlinkSync(oldImagePath);
+    }
+  }
+  
+  const newImageUrl = `/uploads/products/${req.file.filename}`;
+  
+  // Update the product with new main image
+  const updatedProduct = await Product.findByIdAndUpdate(
+    id,
+    { 
+      image_url: newImageUrl,
+      updated_at: Date.now()
+    },
+    { new: true }
+  );
+  
+  // Process image URLs to full URLs
+  const productWithFullImageUrls = processProductImages(req, updatedProduct.toObject());
+  
+  res.status(200).json({
+    success: true,
+    message: "Cập nhật hình ảnh chính sản phẩm thành công",
+    data: {
+      product: productWithFullImageUrls,
+      new_image: getFullImageUrl(req, newImageUrl)
+    }
+  });
+});
+
+const deleteProductImage = handleAsync(async (req, res, next) => {
+  const { id } = req.params;
+  const { image_url } = req.body;
+  
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return next(createError(400, message.PRODUCT.INVALID_ID));
+  }
+  
+  if (!image_url) {
+    return next(createError(400, "URL hình ảnh là bắt buộc"));
+  }
+  
+  const product = await Product.findById(id);
+  
+  if (!product) {
+    return next(createError(404, message.PRODUCT.NOT_FOUND));
+  }
+  
+  // Check if image exists in gallery
+  const imageGallery = product.image_gallery || [];
+  if (!imageGallery.includes(image_url)) {
+    return next(createError(404, "Không tìm thấy hình ảnh trong bộ sưu tập của sản phẩm"));
+  }
+  
+  // Delete file from server
+  const imagePath = path.join(
+    process.cwd(),
+    image_url.replace(/^\//, "")
+  );
+  
+  if (fs.existsSync(imagePath)) {
+    fs.unlinkSync(imagePath);
+  }
+  
+  // Remove image from gallery
+  const updatedGallery = imageGallery.filter(img => img !== image_url);
+  
+  // Update product
+  const updatedProduct = await Product.findByIdAndUpdate(
+    id,
+    { 
+      image_gallery: updatedGallery,
+      updated_at: Date.now()
+    },
+    { new: true }
+  );
+  
+  // Process image URLs to full URLs
+  const productWithFullImageUrls = processProductImages(req, updatedProduct.toObject());
+  
+  res.status(200).json({
+    success: true,
+    message: "Xóa hình ảnh sản phẩm thành công",
+    data: {
+      product: productWithFullImageUrls
+    }
+  });
+});
+
 export {
   getAllProducts,
   getTrashedProducts,
@@ -481,5 +736,8 @@ export {
   restoreProduct,
   searchProducts,
   updateProductStatus,
-  getProductBySlug
+  getProductBySlug,
+  uploadProductImages,
+  updateProductMainImage,
+  deleteProductImage
 };

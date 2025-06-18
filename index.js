@@ -23,32 +23,29 @@ app.use(
 	cors({
 		origin: ["http://localhost:5173", "http://localhost:5174"],
 		credentials: true,
-		// Them cac cau hinh can thiet
 	})
 );
 
-// Serve static files from uploads directory
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+app.use(express.static(path.join(__dirname, 'src/public')));
 
 setupSwagger(app);
 
 app.use("/api", routes);
 
-// Middleware xử lý JSON không hợp lệ
 app.use(jsonValid);
 
-// Middleware xử lý route không tồn tại
 app.use(notFoundHandler);
 
-// Middleware xử lý lỗi chung
 app.use(errorHandler);
 
 const server = app.listen(PORT, () => {
 	console.log(`Server is running on: http://localhost:${PORT}/api`);
 	console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
+	console.log(`Test images at http://localhost:${PORT}/test-images.html`);
 });
 
-// Middleware xử lý lỗi không xác định
 process.on("unhandledRejection", (error, promise) => {
 	console.error(`Error: ${error.message}`);
 	server.close(() => process.exit(1));
