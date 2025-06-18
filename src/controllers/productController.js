@@ -27,7 +27,10 @@ const getAllProducts = handleAsync(async (req, res, next) => {
   }
 
   if (search) {
-    query.product_name = { $regex: search, $options: "i" };
+    query.$or = [
+      { product_name: { $regex: search, $options: "i" } },
+      { slug: { $regex: search, $options: "i" } }
+    ];
   }
 
   if (minPrice || maxPrice) {
@@ -329,7 +332,10 @@ const searchProducts = handleAsync(async (req, res, next) => {
   }
 
   const query = {
-    product_name: { $regex: q, $options: "i" },
+    $or: [
+      { product_name: { $regex: q, $options: "i" } },
+      { slug: { $regex: q, $options: "i" } }
+    ],
     is_deleted: false,
   };
 
