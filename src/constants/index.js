@@ -82,7 +82,6 @@ const message = {
         INVALID_STATUS: "Trạng thái không hợp lệ",
         UPDATE_STATUS_SUCCESS: "Cập nhật trạng thái sản phẩm thành công",
         SEARCH_REQUIRED: "Từ khóa tìm kiếm là bắt buộc",
-        NOT_FOUND: "Không tìm thấy sản phẩm",
         SEARCH_SUCCESS: "Tìm kiếm sản phẩm thành công"
     },
     PRODUCT_COLOR: {
@@ -156,6 +155,16 @@ const message = {
     },
     REVIEW: {
         GET_ALL_SUCCESS: "Lấy danh sách đánh giá thành công",
+    },
+    CART: {
+        ADD_SUCCESS: "Thêm sản phẩm vào giỏ hàng thành công",
+        GET_SUCCESS: "Lấy thông tin giỏ hàng thành công",
+        UPDATE_SUCCESS: "Cập nhật giỏ hàng thành công",
+        DELETE_SUCCESS: "Xóa giỏ hàng thành công",
+        CLEAR_SUCCESS: "Xóa toàn bộ sản phẩm trong giỏ hàng thành công",
+        PRODUCT_NOT_FOUND: "Sản phẩm không tồn tại trong giỏ hàng",
+        OUT_OF_STOCK: "Sản phẩm đã hết hàng",
+        INVALID_QUANTITY: "Số lượng không hợp lệ"
     }
 };
 

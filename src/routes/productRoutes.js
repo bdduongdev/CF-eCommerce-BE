@@ -2,7 +2,6 @@ import express from "express";
 import { verifyToken, isAdmin, isCustomer, isAdminOrCustomer } from "../middlewares/auth.js";
 import { 
     getAllProducts, 
-    getProductById, 
     createProduct, 
     updateProduct, 
     deleteProduct, 
@@ -10,7 +9,8 @@ import {
     restoreProduct,
     searchProducts,
     updateProductStatus,
-    getProductBySlug,
+    getProductById,
+    getGroupedProductBySlug,
     uploadProductImages,
     updateProductMainImage,
     deleteProductImage
@@ -24,8 +24,8 @@ const router = express.Router();
 
 router.get("/", getAllProducts);
 router.get("/search", searchProducts);
+router.get("/group/:slug", getGroupedProductBySlug);
 router.get("/show/:id", getProductById);
-router.get("/:slug", getProductBySlug);
 
 router.get("/image-test/:filename", (req, res) => {
   const { filename } = req.params;
@@ -40,7 +40,6 @@ router.put("/update/:id", isAdmin, upload.single('image'), validate(updateProduc
 router.patch("/status/:id", isAdmin, validate(updateProductStatusSchema), updateProductStatus);
 router.delete("/delete/:id", isAdmin, deleteProduct);
 router.put("/restore/:id", isAdmin, restoreProduct);
-
 router.post("/images/:id", isAdmin, upload.array('images', 10), uploadProductImages);
 router.put("/image/:id", isAdmin, upload.single('image'), updateProductMainImage);
 router.delete("/image/:id", isAdmin, validate(deleteProductImageSchema), deleteProductImage);

@@ -21,6 +21,7 @@ import OrderStatusHistory from '../src/models/OrderStatusHistory.js';
 import Inventory from '../src/models/Inventory.js';
 import RefreshToken from '../src/models/RefreshToken.js';
 import PasswordResetToken from '../src/models/PasswordResetToken.js';
+import ProductVariant from '../src/models/ProductVariant.js';
 
 // Load environment variables
 dotenv.config();
@@ -52,8 +53,9 @@ async function migrate() {
     await Banner.collection.createIndex({ is_deleted: 1 });
     await User.collection.createIndex({ email: 1, role_id: 1 });
     await Category.collection.createIndex({ is_deleted: 1, category_name: 1 });
-    await Product.collection.createIndex({ is_deleted: 1, category_id: 1, color_id: 1, storage_id: 1 });
+    await Product.collection.createIndex({ is_deleted: 1, category_id: 1 });
     await ProductColor.collection.createIndex({ is_deleted: 1, color_name: 1 });
+    await ProductVariant.collection.createIndex({ is_deleted: 1, product_id: 1, color_id: 1, storage_id: 1 });
     await ProductStorage.collection.createIndex({ is_deleted: 1, storage_name: 1 });
     await Discount.collection.createIndex({ is_deleted: 1, product_id: 1 });
     await Wishlist.collection.createIndex({ user_id: 1 });

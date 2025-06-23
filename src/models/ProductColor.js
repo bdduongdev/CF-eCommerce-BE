@@ -7,11 +7,6 @@ const ProductColorSchema = new mongoose.Schema({
         trim: true,
         maxlength: [100, "Tên màu sắc không được vượt quá 100 ký tự"]
     },
-    price: {
-        type: Number,
-        required: [true, "Giá là bắt buộc"],
-        min: [0, "Giá không được âm"]
-    },
     is_deleted: {
         type: Boolean,
         default: false

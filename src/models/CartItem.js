@@ -6,9 +6,9 @@ const CartItemSchema = new Schema({
     type: Schema.Types.ObjectId,
     ref: 'Cart'
   },
-  product_id: {
+  variant_id: {
     type: Schema.Types.ObjectId,
-    ref: 'Product'
+    ref: 'ProductVariant'
   },
   quantity: {
     type: Number,
