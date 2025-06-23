@@ -1,14 +1,17 @@
 import Product from "../models/Product.js";
+import ProductVariant from "../models/ProductVariant.js";
 import Category from "../models/Category.js";
 import ProductColor from "../models/ProductColor.js";
 import ProductStorage from "../models/ProductStorage.js";
-import mongoose from "mongoose";
 
 const seedProducts = async () => {
   try {
+    // 1. Xóa tất cả dữ liệu cũ để tránh trùng lặp
+    await ProductVariant.deleteMany();
     await Product.deleteMany();
-    console.log("Đã xóa dữ liệu Product cũ");
+    console.log("Đã xóa dữ liệu Product và ProductVariant cũ");
 
+    // 2. Lấy dữ liệu cần thiết từ các collection khác
     const categories = await Category.find();
     const colors = await ProductColor.find();
     const storages = await ProductStorage.find();
@@ -23,116 +26,76 @@ const seedProducts = async () => {
       iphoneCategory = categories[0];
     }
 
+    // 3. Định nghĩa các model sản phẩm gốc
     const iPhoneModels = [
-      {
-        name: "iPhone 13",
-        slug: "iphone-13",
-        basePrice: 15990000,
-        description: "iPhone 13 với màn hình Super Retina XDR 6.1 inch, chip A15 Bionic mạnh mẽ và hệ thống camera kép tiên tiến."
-      },
-      {
-        name: "iPhone 13 Mini",
-        slug: "iphone-13-mini",
-        basePrice: 13990000,
-        description: "iPhone 13 Mini với màn hình Super Retina XDR 5.4 inch, chip A15 Bionic và thiết kế nhỏ gọn."
-      },
-      {
-        name: "iPhone 13 Pro",
-        slug: "iphone-13-pro",
-        basePrice: 21990000,
-        description: "iPhone 13 Pro với màn hình ProMotion 120Hz, chip A15 Bionic, hệ thống camera Pro và thời lượng pin dài hơn."
-      },
-      {
-        name: "iPhone 13 Pro Max",
-        slug: "iphone-13-pro-max",
-        basePrice: 23990000,
-        description: "iPhone 13 Pro Max với màn hình ProMotion 6.7 inch, chip A15 Bionic, hệ thống camera Pro và thời lượng pin cực dài."
-      },
-      {
-        name: "iPhone 14",
-        slug: "iphone-14",
-        basePrice: 19990000,
-        description: "iPhone 14 với màn hình Super Retina XDR 6.1 inch, chip A15 Bionic, camera nâng cấp và các tính năng an toàn mới."
-      },
-      {
-        name: "iPhone 14 Plus",
-        slug: "iphone-14-plus",
-        basePrice: 21990000,
-        description: "iPhone 14 Plus với màn hình Super Retina XDR 6.7 inch, chip A15 Bionic, camera nâng cấp và pin dài hơn."
-      },
-      {
-        name: "iPhone 14 Pro",
-        slug: "iphone-14-pro",
-        basePrice: 25990000,
-        description: "iPhone 14 Pro với Dynamic Island, màn hình Always-On, camera 48MP và chip A16 Bionic mạnh mẽ nhất."
-      },
-      {
-        name: "iPhone 14 Pro Max",
-        slug: "iphone-14-pro-max",
-        basePrice: 28990000,
-        description: "iPhone 14 Pro Max với Dynamic Island, màn hình Always-On 6.7 inch, camera 48MP và pin dài nhất."
-      },
-      {
-        name: "iPhone 15",
-        slug: "iphone-15",
-        basePrice: 22990000,
-        description: "iPhone 15 với thiết kế Dynamic Island, cổng USB-C, camera 48MP và chip A16 Bionic mạnh mẽ."
-      },
-      {
-        name: "iPhone 15 Plus",
-        slug: "iphone-15-plus",
-        basePrice: 24990000,
-        description: "iPhone 15 Plus với màn hình 6.7 inch, cổng USB-C, camera 48MP và thời lượng pin cực dài."
-      },
-      {
-        name: "iPhone 15 Pro",
-        slug: "iphone-15-pro",
-        basePrice: 28990000,
-        description: "iPhone 15 Pro với khung titan, chip A17 Pro, cổng USB-C tốc độ cao và hệ thống camera chuyên nghiệp."
-      },
-      {
-        name: "iPhone 15 Pro Max",
-        slug: "iphone-15-pro-max",
-        basePrice: 33990000,
-        description: "iPhone 15 Pro Max với khung titan, màn hình 6.7 inch, camera tele 5x và hiệu suất chơi game đỉnh cao."
-      }
+      { name: "iPhone 13", basePrice: 15990000 },
+      { name: "iPhone 13 Mini", basePrice: 13990000 },
+      { name: "iPhone 13 Pro", basePrice: 21990000 },
+      { name: "iPhone 13 Pro Max", basePrice: 23990000 },
+      { name: "iPhone 14", basePrice: 19990000 },
+      { name: "iPhone 14 Plus", basePrice: 21990000 },
+      { name: "iPhone 14 Pro", basePrice: 25990000 },
+      { name: "iPhone 14 Pro Max", basePrice: 28990000 },
+      { name: "iPhone 15", basePrice: 22990000 },
+      { name: "iPhone 15 Plus", basePrice: 24990000 },
+      { name: "iPhone 15 Pro", basePrice: 28990000 },
+      { name: "iPhone 15 Pro Max", basePrice: 33990000 }
     ];
 
-    // URL ảnh mặc định cho tất cả sản phẩm
-    const defaultImageUrl = "/uploads/products/default-product.jpg";
-
-    const products = [];
-    const now = new Date();
-
-    // Create base products with their slugs
+    const baseProducts = [];
     for (const model of iPhoneModels) {
-      // Generate a random stock quantity between 5 and 55
-      const stockQuantity = Math.floor(Math.random() * 50) + 5;
-      
-      // Determine product status based on stock
-      let status = 'active';
-      if (stockQuantity === 0) {
-        status = 'out_of_stock';
-      } else if (Math.random() < 0.1) {
-        status = 'inactive';
-      }
-      
-      products.push({
+      const slug = model.name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+      baseProducts.push({
         product_name: model.name,
-        slug: model.slug,
-        description: model.description,
-        price: model.basePrice,
-        stock_quantity: stockQuantity,
-        status: status,
+        slug: slug,
+        description: `Điện thoại ${model.name} chính hãng, hiệu năng mạnh mẽ, thiết kế sang trọng.`,
         category_id: iphoneCategory._id,
-        image_url: defaultImageUrl,
-        created_at: now,
-        updated_at: now
+        status: 'active'
       });
     }
 
-    await Product.insertMany(products);
-    console.log(`Đã thêm ${products.length} sản phẩm iPhone mẫu`);
+    // 4. Thêm các sản phẩm gốc vào DB
+    const createdProducts = await Product.insertMany(baseProducts);
+    console.log(`Đã thêm ${createdProducts.length} sản phẩm gốc.`);
+
+    const productVariants = [];
+    const modelPriceMap = new Map(iPhoneModels.map(m => [m.name, m.basePrice]));
+
+    // 5. Tạo các biến thể cho từng sản phẩm gốc
+    for (const baseProduct of createdProducts) {
+      const basePrice = modelPriceMap.get(baseProduct.product_name) || 0;
+
+      for (const color of colors) {
+        for (const storage of storages) {
+          const stockQuantity = Math.floor(Math.random() * 50) + 5;
+          const status = stockQuantity > 0 ? 'active' : 'out_of_stock';
+          
+          const colorPrice = typeof color.price === 'number' ? color.price : 0;
+          const storagePrice = typeof storage.price === 'number' ? storage.price : 0;
+          const totalPrice = basePrice + colorPrice + storagePrice;
+
+          const sku = `${baseProduct.slug}-${storage.storage_name.toLowerCase()}-${color.color_name.toLowerCase()}`.replace(/\s+/g, '');
+
+          productVariants.push({
+            product_id: baseProduct._id,
+            color_id: color._id,
+            storage_id: storage._id,
+            price: totalPrice,
+            stock_quantity: stockQuantity,
+            status: status,
+            sku: sku
+          });
+        }
+      }
+    }
+
+    // 6. Thêm tất cả các biến thể vào DB
+    if (productVariants.length > 0) {
+      await ProductVariant.insertMany(productVariants);
+      console.log(`Đã thêm ${productVariants.length} biến thể sản phẩm.`);
+    } else {
+      console.log("Không có biến thể sản phẩm nào được tạo");
+    }
     
     return true;
   } catch (error) {

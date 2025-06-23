@@ -16,40 +16,14 @@ const ProductSchema = new Schema({
   description: {
     type: String
   },
-  price: {
-    type: Number,
-    required: true
-  },
-  stock_quantity: {
-    type: Number,
-    required: true,
-    default: 0
-  },
   status: {
     type: String,
-    enum: ['active', 'inactive', 'out_of_stock', 'discontinued'],
+    enum: ['active', 'inactive', 'discontinued'],
     default: 'active'
   },
   category_id: {
     type: Schema.Types.ObjectId,
     ref: 'Category'
-  },
-  color_id: {
-    type: Schema.Types.ObjectId,
-    ref: 'ProductColor'
-  },
-  storage_id: {
-    type: Schema.Types.ObjectId,
-    ref: 'ProductStorage'
-  },
-  image_url: {
-    type: String,
-    maxlength: 255,
-    default: "/uploads/products/default-product.jpg"
-  },
-  image_gallery: {
-    type: [String],
-    default: []
   },
   is_deleted: {
     type: Boolean,
