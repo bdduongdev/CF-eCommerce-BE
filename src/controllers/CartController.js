@@ -78,7 +78,7 @@ const getCart = handleAsync(async (req, res, next) => {
     if (!cart) {
         return res.status(200).json({
             success: true,
-            message: "Giỏ hàng trống.",
+            message: message.CART.GET_SUCCESS,
             data: {
                 items: [],
                 total_price: 0,
@@ -104,7 +104,7 @@ const getCart = handleAsync(async (req, res, next) => {
         
     res.status(200).json({
         success: true,
-        message: "Lấy giỏ hàng thành công.",
+        message: message.CART.GET_SUCCESS,
         data: {
             cart_id: cart._id,
             user_id: cart.user_id,
@@ -121,7 +121,7 @@ const removeFromCart = handleAsync(async (req, res, next) => {
 
     const cartItem = await CartItem.findById(cartItemId);
     if(!cartItem) {
-        return next(createError(404, "Không tìm thấy sản phẩm trong giỏ hàng."));
+        return next(createError(404, message.CART.PRODUCT_NOT_FOUND));
     }
     
     const cart = await Cart.findOne({ _id: cartItem.cart_id, user_id: userId });
@@ -133,7 +133,7 @@ const removeFromCart = handleAsync(async (req, res, next) => {
 
     res.status(200).json({
         success: true,
-        message: "Xóa sản phẩm khỏi giỏ hàng thành công."
+        message: message.CART.DELETE_SUCCESS
     });
 });
 
@@ -143,12 +143,12 @@ const updateCartItemQuantity = handleAsync(async (req, res, next) => {
     const userId = req.user.id;
 
     if (quantity < 1) {
-        return next(createError(400, "Số lượng phải lớn hơn hoặc bằng 1."));
+        return next(createError(400, message.CART.INVALID_QUANTITY));
     }
 
     const cartItem = await CartItem.findById(cartItemId).populate('variant_id');
      if(!cartItem) {
-        return next(createError(404, "Không tìm thấy sản phẩm trong giỏ hàng."));
+        return next(createError(404, message.CART.PRODUCT_NOT_FOUND));
     }
 
     const cart = await Cart.findOne({ _id: cartItem.cart_id, user_id: userId });
@@ -157,7 +157,7 @@ const updateCartItemQuantity = handleAsync(async (req, res, next) => {
     }
     
     if (cartItem.variant_id.stock_quantity < quantity) {
-        return next(createError(400, `Số lượng tồn kho không đủ. Chỉ còn ${cartItem.variant_id.stock_quantity} sản phẩm.`));
+        return next(createError(400, message.CART.OUT_OF_STOCK));
     }
 
     cartItem.quantity = quantity;
@@ -165,7 +165,7 @@ const updateCartItemQuantity = handleAsync(async (req, res, next) => {
 
     res.status(200).json({
         success: true,
-        message: "Cập nhật số lượng thành công.",
+        message: message.CART.UPDATE_SUCCESS,
         data: cartItem
     });
 });

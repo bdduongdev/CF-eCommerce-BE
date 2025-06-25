@@ -11,7 +11,6 @@ import { addToCartSchema } from '../validations/cart.validation.js';
 
 const router = express.Router();
 
-// All routes require user to be logged in and to be a customer
 router.use(verifyToken, isCustomer);
 
 router.get('/', getCart);

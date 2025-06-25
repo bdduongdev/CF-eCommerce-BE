@@ -16,7 +16,6 @@ import Shipping from './Shipping.js';
 import OrderStatusHistory from './OrderStatusHistory.js';
 import Inventory from './Inventory.js';
 import Coupon from './Coupon.js';
-import RefreshToken from './RefreshToken.js';
 import PasswordResetToken from './PasswordResetToken.js';
 
 export {
@@ -38,6 +37,5 @@ export {
   OrderStatusHistory,
   Inventory,
   Coupon,
-  RefreshToken,
   PasswordResetToken
 };
