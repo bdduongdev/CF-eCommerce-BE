@@ -165,6 +165,37 @@ const message = {
         PRODUCT_NOT_FOUND: "Sản phẩm không tồn tại trong giỏ hàng",
         OUT_OF_STOCK: "Sản phẩm đã hết hàng",
         INVALID_QUANTITY: "Số lượng không hợp lệ"
+    },
+    ORDER: {
+        CREATE_SUCCESS: "Tạo đơn hàng thành công",
+        GET_LIST_SUCCESS: "Lấy danh sách đơn hàng thành công",
+        GET_DETAIL_SUCCESS: "Lấy chi tiết đơn hàng thành công",
+        CANCEL_SUCCESS: "Hủy đơn hàng thành công",
+        CART_EMPTY: "Giỏ hàng trống",
+        PRODUCT_NOT_FOUND: "Sản phẩm không tồn tại",
+        NOT_FOUND: "Đơn hàng không tồn tại",
+        CANNOT_CANCEL: "Không thể hủy đơn hàng đã được xử lý",
+        OUT_OF_STOCK: (productName, stock) => `Sản phẩm ${productName} chỉ còn ${stock} trong kho`
+    },
+    PAYMENT: {
+        ORDER_NOT_FOUND: "Đơn hàng không tồn tại",
+        ALREADY_PAID: "Đơn hàng đã được thanh toán",
+        CANNOT_PAY_CANCELLED: "Không thể thanh toán đơn hàng đã hủy",
+        INVALID_METHOD: "Phương thức thanh toán không hợp lệ",
+        SUCCESS: "Thanh toán thành công",
+        FAILED: "Thanh toán thất bại",
+        ERROR: "Có lỗi xảy ra trong quá trình thanh toán",
+        BANK_INFO_REQUIRED: "Thông tin chuyển khoản không đầy đủ",
+        BANK_TRANSACTION_INVALID: "Giao dịch chuyển khoản không hợp lệ",
+        CARD_INFO_REQUIRED: "Thông tin thẻ không đầy đủ",
+        CARD_INVALID: "Thông tin thẻ không hợp lệ",
+        MOMO_INFO_REQUIRED: "Thông tin thanh toán MoMo không đầy đủ",
+        MOMO_OTP_INVALID: "Mã OTP không hợp lệ",
+        HISTORY_SUCCESS: "Lấy lịch sử thanh toán thành công",
+        REFUND_ONLY_PAID: "Chỉ có thể hoàn tiền đơn hàng đã thanh toán",
+        REFUND_DELIVERED: "Không thể hoàn tiền đơn hàng đã giao",
+        REFUND_SUCCESS: "Hoàn tiền thành công",
+        REFUND_FAILED: "Hoàn tiền thất bại"
     }
 };
 
