@@ -170,11 +170,14 @@ const message = {
         CREATE_SUCCESS: "Tạo đơn hàng thành công",
         GET_LIST_SUCCESS: "Lấy danh sách đơn hàng thành công",
         GET_DETAIL_SUCCESS: "Lấy chi tiết đơn hàng thành công",
+        GET_ALL_SUCCESS: "Lấy danh sách tất cả đơn hàng thành công",
+        UPDATE_STATUS_SUCCESS: "Cập nhật trạng thái đơn hàng thành công",
         CANCEL_SUCCESS: "Hủy đơn hàng thành công",
         CART_EMPTY: "Giỏ hàng trống",
         PRODUCT_NOT_FOUND: "Sản phẩm không tồn tại",
         NOT_FOUND: "Đơn hàng không tồn tại",
         CANNOT_CANCEL: "Không thể hủy đơn hàng đã được xử lý",
+        INVALID_STATUS_TRANSITION: "Không thể chuyển từ trạng thái này sang trạng thái khác",
         OUT_OF_STOCK: (productName, stock) => `Sản phẩm ${productName} chỉ còn ${stock} trong kho`
     },
     PAYMENT: {

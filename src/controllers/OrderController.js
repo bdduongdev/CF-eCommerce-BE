@@ -330,10 +330,219 @@ const calculateShippingFee = (shipping_address) => {
   return 30000;
 };
 
+// Lấy tất cả đơn hàng (Admin)
+const getAllOrders = handleAsync(async (req, res, next) => {
+  const { 
+    page = 1, 
+    limit = 10, 
+    status, 
+    payment_status, 
+    payment_method,
+    search,
+    start_date,
+    end_date,
+    sort_by = 'created_at',
+    sort_order = 'desc'
+  } = req.query;
+
+  const query = {};
+
+  // Filter theo trạng thái đơn hàng
+  if (status) {
+    query.status = status;
+  }
+
+  // Filter theo trạng thái thanh toán
+  if (payment_status) {
+    query.payment_status = payment_status;
+  }
+
+  // Filter theo phương thức thanh toán
+  if (payment_method) {
+    query.payment_method = payment_method;
+  }
+
+  // Filter theo ngày
+  if (start_date || end_date) {
+    query.created_at = {};
+    if (start_date) {
+      query.created_at.$gte = new Date(start_date);
+    }
+    if (end_date) {
+      query.created_at.$lte = new Date(end_date + 'T23:59:59.999Z');
+    }
+  }
+
+  // Search theo order_number hoặc thông tin khách hàng
+  if (search) {
+    query.$or = [
+      { order_number: { $regex: search, $options: 'i' } },
+      { 'shipping_address.fullname': { $regex: search, $options: 'i' } },
+      { 'shipping_address.phone': { $regex: search, $options: 'i' } }
+    ];
+  }
+
+  const skip = (parseInt(page) - 1) * parseInt(limit);
+  const sortOptions = {};
+  sortOptions[sort_by] = sort_order === 'desc' ? -1 : 1;
+
+  const orders = await Order.find(query)
+    .sort(sortOptions)
+    .skip(skip)
+    .limit(parseInt(limit))
+    .populate('user_id', 'fullname email phone')
+    .populate('coupon_id', 'code discount_value discount_type');
+
+  const total = await Order.countDocuments(query);
+
+  // Tính tổng doanh thu
+  const revenueStats = await Order.aggregate([
+    { $match: query },
+    {
+      $group: {
+        _id: null,
+        totalRevenue: { $sum: '$total_amount' },
+        totalOrders: { $sum: 1 },
+        averageOrderValue: { $avg: '$total_amount' }
+      }
+    }
+  ]);
+
+  const stats = revenueStats[0] || {
+    totalRevenue: 0,
+    totalOrders: 0,
+    averageOrderValue: 0
+  };
+
+  res.status(200).json({
+    success: true,
+    message: message.ORDER.GET_ALL_SUCCESS,
+    data: {
+      orders,
+      pagination: {
+        total,
+        page: parseInt(page),
+        limit: parseInt(limit),
+        totalPages: Math.ceil(total / parseInt(limit))
+      },
+      stats: {
+        totalRevenue: stats.totalRevenue,
+        totalOrders: stats.totalOrders,
+        averageOrderValue: Math.round(stats.averageOrderValue * 100) / 100
+      }
+    }
+  });
+});
+
+// Lấy chi tiết đơn hàng theo ID (Admin)
+const getOrderById = handleAsync(async (req, res, next) => {
+  const { orderId } = req.params;
+
+  const order = await Order.findById(orderId)
+    .populate('user_id', 'fullname email phone')
+    .populate('coupon_id', 'code discount_value discount_type');
+
+  if (!order) {
+    return next(createError(404, message.ORDER.NOT_FOUND));
+  }
+
+  const orderDetails = await OrderDetail.find({ order_id: orderId })
+    .populate('product_variant_id', 'sku');
+
+  res.status(200).json({
+    success: true,
+    message: message.ORDER.GET_DETAIL_SUCCESS,
+    data: {
+      order,
+      order_details: orderDetails
+    }
+  });
+});
+
+// Cập nhật trạng thái đơn hàng (Admin)
+const updateOrderStatus = handleAsync(async (req, res, next) => {
+  const { orderId } = req.params;
+  const { status, note, tracking_number, estimated_delivery, cancelled_reason } = req.body;
+
+  const order = await Order.findById(orderId);
+  if (!order) {
+    return next(createError(404, message.ORDER.NOT_FOUND));
+  }
+
+  // Kiểm tra logic chuyển đổi trạng thái
+  const currentStatus = order.status;
+  const newStatus = status;
+
+  // Logic kiểm tra chuyển đổi trạng thái hợp lệ
+  const validTransitions = {
+    'pending': ['confirmed', 'cancelled'],
+    'confirmed': ['processing', 'cancelled'],
+    'processing': ['shipped', 'cancelled'],
+    'shipped': ['delivered', 'returned'],
+    'delivered': ['returned'],
+    'cancelled': [], // Không thể chuyển từ cancelled
+    'returned': []   // Không thể chuyển từ returned
+  };
+
+  if (!validTransitions[currentStatus].includes(newStatus)) {
+    return next(createError(400, message.ORDER.INVALID_STATUS_TRANSITION));
+  }
+
+  // Cập nhật trạng thái và thông tin liên quan
+  order.status = newStatus;
+  
+  // Cập nhật thông tin bổ sung
+  if (note) order.note = note;
+  if (tracking_number) order.tracking_number = tracking_number;
+  if (estimated_delivery) order.estimated_delivery = new Date(estimated_delivery);
+
+  // Xử lý các trường hợp đặc biệt
+  if (newStatus === 'delivered') {
+    order.delivered_at = new Date();
+  } else if (newStatus === 'cancelled') {
+    order.cancelled_at = new Date();
+    order.cancelled_reason = cancelled_reason || "Admin hủy đơn hàng";
+    
+    // Hoàn trả tồn kho nếu đơn hàng đã được xác nhận trước đó
+    if (['confirmed', 'processing', 'shipped'].includes(currentStatus)) {
+      const orderDetails = await OrderDetail.find({ order_id: orderId });
+      for (const detail of orderDetails) {
+        await ProductVariant.findByIdAndUpdate(
+          detail.product_variant_id,
+          { $inc: { stock_quantity: detail.quantity } }
+        );
+      }
+    }
+  }
+
+  await order.save();
+
+  // Populate thông tin đơn hàng để trả về
+  const updatedOrder = await Order.findById(orderId)
+    .populate('user_id', 'fullname email phone')
+    .populate('coupon_id', 'code discount_value discount_type');
+
+  res.status(200).json({
+    success: true,
+    message: message.ORDER.UPDATE_STATUS_SUCCESS,
+    data: {
+      order: updatedOrder,
+      status_change: {
+        from: currentStatus,
+        to: newStatus,
+        changed_at: new Date()
+      }
+    }
+  });
+});
+
 export {
   createOrderFromCart,
   createOrderDirect,
   getUserOrders,
   getOrderDetail,
-  cancelOrder
+  cancelOrder,
+  getAllOrders,
+  getOrderById,
+  updateOrderStatus
 }; 

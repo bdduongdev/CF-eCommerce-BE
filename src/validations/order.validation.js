@@ -170,4 +170,77 @@ export const processRefundSchema = Joi.object({
     'number.base': 'Số tiền hoàn phải là số',
     'number.positive': 'Số tiền hoàn phải lớn hơn 0'
   })
+});
+
+// Validation cho admin lấy danh sách đơn hàng
+export const getAllOrdersSchema = Joi.object({
+  page: Joi.number().integer().min(1).optional().messages({
+    'number.base': 'Số trang phải là số',
+    'number.integer': 'Số trang phải là số nguyên',
+    'number.min': 'Số trang phải lớn hơn 0'
+  }),
+  limit: Joi.number().integer().min(1).max(100).optional().messages({
+    'number.base': 'Giới hạn phải là số',
+    'number.integer': 'Giới hạn phải là số nguyên',
+    'number.min': 'Giới hạn phải lớn hơn 0',
+    'number.max': 'Giới hạn không được vượt quá 100'
+  }),
+  status: Joi.string().valid('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned').optional().messages({
+    'any.only': 'Trạng thái đơn hàng không hợp lệ'
+  }),
+  payment_status: Joi.string().valid('pending', 'paid', 'failed', 'refunded').optional().messages({
+    'any.only': 'Trạng thái thanh toán không hợp lệ'
+  }),
+  payment_method: Joi.string().valid('cod', 'bank_transfer', 'credit_card', 'momo', 'vnpay').optional().messages({
+    'any.only': 'Phương thức thanh toán không hợp lệ'
+  }),
+  search: Joi.string().optional().trim().max(100).messages({
+    'string.max': 'Từ khóa tìm kiếm không được vượt quá 100 ký tự'
+  }),
+  start_date: Joi.date().iso().optional().messages({
+    'date.base': 'Ngày bắt đầu không hợp lệ',
+    'date.format': 'Ngày bắt đầu phải có định dạng ISO'
+  }),
+  end_date: Joi.date().iso().optional().messages({
+    'date.base': 'Ngày kết thúc không hợp lệ',
+    'date.format': 'Ngày kết thúc phải có định dạng ISO'
+  }),
+  sort_by: Joi.string().valid('created_at', 'order_number', 'total_amount', 'status').optional().messages({
+    'any.only': 'Trường sắp xếp không hợp lệ'
+  }),
+  sort_order: Joi.string().valid('asc', 'desc').optional().messages({
+    'any.only': 'Thứ tự sắp xếp không hợp lệ'
+  })
+});
+
+// Validation cho admin lấy chi tiết đơn hàng
+export const getOrderByIdSchema = Joi.object({
+  orderId: Joi.string().required().messages({
+    'string.empty': 'ID đơn hàng không được để trống'
+  })
+});
+
+// Validation cho admin cập nhật trạng thái đơn hàng
+export const updateOrderStatusSchema = Joi.object({
+  status: Joi.string().valid('pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned').required().messages({
+    'any.only': 'Trạng thái đơn hàng không hợp lệ',
+    'string.empty': 'Trạng thái đơn hàng không được để trống'
+  }),
+  note: Joi.string().optional().trim().max(500).messages({
+    'string.max': 'Ghi chú không được vượt quá 500 ký tự'
+  }),
+  tracking_number: Joi.string().optional().trim().max(100).messages({
+    'string.max': 'Mã vận chuyển không được vượt quá 100 ký tự'
+  }),
+  estimated_delivery: Joi.date().optional().messages({
+    'date.base': 'Ngày dự kiến giao hàng không hợp lệ'
+  }),
+  cancelled_reason: Joi.when('status', {
+    is: 'cancelled',
+    then: Joi.string().required().trim().max(200).messages({
+      'string.empty': 'Lý do hủy đơn hàng không được để trống',
+      'string.max': 'Lý do hủy không được vượt quá 200 ký tự'
+    }),
+    otherwise: Joi.optional()
+  })
 }); 

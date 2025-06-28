@@ -43,7 +43,6 @@ app.use(errorHandler);
 const server = app.listen(PORT, () => {
 	console.log(`Server is running on: http://localhost:${PORT}/api`);
 	console.log(`Swagger Docs available at http://localhost:${PORT}/api-docs`);
-	console.log(`Test images at http://localhost:${PORT}/test-images.html`);
 });
 
 process.on("unhandledRejection", (error, promise) => {
