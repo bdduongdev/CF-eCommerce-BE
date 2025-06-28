@@ -1,56 +1,107 @@
 import Discount from "../models/Discount.js";
+import DiscountProduct from "../models/DiscountProduct.js";
 import Product from "../models/Product.js";
-import { faker } from '@faker-js/faker';
 
-const seedDiscounts = async (count = 10) => {
+const discountData = [
+  {
+    discount_type: "percentage",
+    discount_value: 15,
+    start_date: new Date("2024-01-01"),
+    end_date: new Date("2024-12-31"),
+    description: "Giảm giá 15% cho tất cả sản phẩm iPhone",
+    is_active: true
+  },
+  {
+    discount_type: "fixed",
+    discount_value: 500000,
+    start_date: new Date("2024-01-01"),
+    end_date: new Date("2024-06-30"),
+    description: "Giảm giá cố định 500,000 VNĐ cho iPhone 15 Pro",
+    is_active: true
+  },
+  {
+    discount_type: "percentage",
+    discount_value: 20,
+    start_date: new Date("2024-02-01"),
+    end_date: new Date("2024-05-31"),
+    description: "Giảm giá 20% cho iPhone 14 series",
+    is_active: true
+  },
+  {
+    discount_type: "fixed",
+    discount_value: 300000,
+    start_date: new Date("2024-03-01"),
+    end_date: new Date("2024-08-31"),
+    description: "Giảm giá cố định 300,000 VNĐ cho iPhone 13 series",
+    is_active: true
+  },
+  {
+    discount_type: "percentage",
+    discount_value: 10,
+    start_date: new Date("2024-06-01"),
+    end_date: new Date("2024-12-31"),
+    description: "Giảm giá 10% cho tất cả sản phẩm",
+    is_active: true
+  }
+];
+
+const seedDiscounts = async () => {
   try {
-    await Discount.deleteMany();
-    console.log("Đã xóa dữ liệu Discount cũ");
+    // Clear existing discounts and discount products
+    await Discount.deleteMany({});
+    await DiscountProduct.deleteMany({});
+    console.log("Cleared existing discounts and discount products");
 
-    const products = await Product.find();
-
-    if (products.length === 0) {
-      console.log("Không có sản phẩm nào để tạo discount");
-      return false;
-    }
-
-    const discounts = [];
-    const discountTypes = ['percentage', 'fixed'];
-
-    for (let i = 0; i < count; i++) {
-      const randomProduct = products[Math.floor(Math.random() * products.length)];
-      const discountType = discountTypes[Math.floor(Math.random() * discountTypes.length)];
-      const now = new Date();
-      const startDate = faker.date.recent();
-      const endDate = faker.date.future({ refDate: startDate });
-      
-      let discountValue;
-      if (discountType === 'percentage') {
-        discountValue = faker.number.int({ min: 5, max: 50 });
-      } else {
-        discountValue = faker.number.int({ min: 100000, max: 2000000 });
-      }
-
-      discounts.push({
-        product_id: randomProduct._id,
-        discount_type: discountType,
-        discount_value: discountValue,
-        start_date: startDate,
-        end_date: endDate,
-        description: faker.commerce.productDescription(),
-        created_at: now,
-        updated_at: now
-      });
-    }
-
-    await Discount.insertMany(discounts);
-    console.log(`Đã thêm ${discounts.length} discount mẫu`);
+    // Get some products to assign discounts to
+    const products = await Product.find({}).limit(10);
     
-    return true;
+    if (products.length === 0) {
+      console.log("No products found. Please seed products first.");
+      return;
+    }
+
+    // Create discounts
+    const createdDiscounts = await Discount.insertMany(discountData);
+    console.log(`Created ${createdDiscounts.length} discounts`);
+
+    // Create discount-product relationships
+    const discountProducts = [];
+    
+    createdDiscounts.forEach((discount, index) => {
+      // Assign 2-3 products to each discount
+      const numProducts = Math.min(2 + (index % 2), products.length);
+      const selectedProducts = products.slice(0, numProducts);
+      
+      selectedProducts.forEach(product => {
+        discountProducts.push({
+          discount_id: discount._id,
+          product_id: product._id
+        });
+      });
+    });
+
+    if (discountProducts.length > 0) {
+      await DiscountProduct.insertMany(discountProducts);
+      console.log(`Created ${discountProducts.length} discount-product relationships`);
+    }
+
+    console.log("Discount seeding completed successfully");
+    return createdDiscounts;
   } catch (error) {
-    console.error(`Lỗi khi seed Discount: ${error.message}`);
-    return false;
+    console.error("Error seeding discounts:", error);
+    throw error;
   }
 };
 
-export default seedDiscounts;
+const clearDiscounts = async () => {
+  try {
+    await Discount.deleteMany({});
+    await DiscountProduct.deleteMany({});
+    console.log("Cleared all discounts and discount products");
+  } catch (error) {
+    console.error("Error clearing discounts:", error);
+    throw error;
+  }
+};
+
+export { seedDiscounts, clearDiscounts };

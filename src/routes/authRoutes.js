@@ -25,11 +25,7 @@ router.post("/register", validate(registerSchema), register);
 router.post("/verify-email", validate(verifyEmailSchema), verifyEmail);
 router.post("/forgot-password", validate(forgotPasswordSchema), forgotPassword);
 router.get("/reset-password/:resetToken", validateResetToken);
-router.post(
-  "/reset-password/:resetToken",
-  validate(resetPasswordSchema),
-  resetPassword
-);
+router.post("/reset-password/:resetToken",validate(resetPasswordSchema),resetPassword);
 
 router.use(verifyToken);
 router.post("/logout", logout);

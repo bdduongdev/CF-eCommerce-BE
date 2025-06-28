@@ -24,4 +24,4 @@ router.get('/', getUserOrders);
 router.get('/:orderId', getOrderDetail);
 router.patch('/:orderId/cancel', validate(cancelOrderSchema), cancelOrder);
 
-export default router; 
+export default router;
