@@ -22,15 +22,10 @@ import path from "path";
 
 const router = express.Router();
 
-router.get("/", getAllProducts);
+router.get("/", getAllProducts);  
 router.get("/search", searchProducts);
 router.get("/group/:slug", getGroupedProductBySlug);
 router.get("/show/:id", getProductById);
-
-router.get("/image-test/:filename", (req, res) => {
-  const { filename } = req.params;
-  res.sendFile(path.join(process.cwd(), "uploads", "products", filename));
-});
 
 router.use(verifyToken);
 

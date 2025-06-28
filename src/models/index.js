@@ -4,6 +4,7 @@ import Product from './Product.js';
 import ProductColor from './ProductColor.js';
 import ProductStorage from './ProductStorage.js';
 import Discount from './Discount.js';
+import DiscountProduct from './DiscountProduct.js';
 import Wishlist from './Wishlist.js';
 import WishlistItem from './WishlistItem.js';
 import Cart from './Cart.js';
@@ -25,6 +26,7 @@ export {
   ProductColor,
   ProductStorage,
   Discount,
+  DiscountProduct,
   Wishlist,
   WishlistItem,
   Cart,

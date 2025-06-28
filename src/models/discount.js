@@ -2,10 +2,6 @@ import mongoose from 'mongoose';
 const Schema = mongoose.Schema;
 
 const DiscountSchema = new Schema({
-  product_id: {
-    type: Schema.Types.ObjectId,
-    ref: 'Product'
-  },
   discount_type: {
     type: String,
     required: true,
@@ -26,6 +22,10 @@ const DiscountSchema = new Schema({
   },
   description: {
     type: String
+  },
+  is_active: {
+    type: Boolean,
+    default: true
   },
   created_at: {
     type: Date,

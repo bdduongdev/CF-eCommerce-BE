@@ -170,11 +170,14 @@ const message = {
         CREATE_SUCCESS: "Tạo đơn hàng thành công",
         GET_LIST_SUCCESS: "Lấy danh sách đơn hàng thành công",
         GET_DETAIL_SUCCESS: "Lấy chi tiết đơn hàng thành công",
+        GET_ALL_SUCCESS: "Lấy danh sách tất cả đơn hàng thành công",
+        UPDATE_STATUS_SUCCESS: "Cập nhật trạng thái đơn hàng thành công",
         CANCEL_SUCCESS: "Hủy đơn hàng thành công",
         CART_EMPTY: "Giỏ hàng trống",
         PRODUCT_NOT_FOUND: "Sản phẩm không tồn tại",
         NOT_FOUND: "Đơn hàng không tồn tại",
         CANNOT_CANCEL: "Không thể hủy đơn hàng đã được xử lý",
+        INVALID_STATUS_TRANSITION: "Không thể chuyển từ trạng thái này sang trạng thái khác",
         OUT_OF_STOCK: (productName, stock) => `Sản phẩm ${productName} chỉ còn ${stock} trong kho`
     },
     PAYMENT: {
@@ -196,6 +199,23 @@ const message = {
         REFUND_DELIVERED: "Không thể hoàn tiền đơn hàng đã giao",
         REFUND_SUCCESS: "Hoàn tiền thành công",
         REFUND_FAILED: "Hoàn tiền thất bại"
+    },
+    DISCOUNT: {
+        GET_ALL_SUCCESS: "Lấy danh sách giảm giá thành công",
+        GET_BY_ID_SUCCESS: "Lấy thông tin giảm giá thành công",
+        CREATE_SUCCESS: "Tạo giảm giá mới thành công",
+        UPDATE_SUCCESS: "Cập nhật giảm giá thành công",
+        DELETE_SUCCESS: "Xóa giảm giá thành công",
+        NOT_FOUND: "Không tìm thấy giảm giá",
+        INVALID_ID: "ID giảm giá không hợp lệ",
+        PRODUCT_NOT_FOUND: "Sản phẩm không tồn tại",
+        INVALID_DISCOUNT_VALUE: "Giá trị giảm giá không hợp lệ",
+        INVALID_DATE_RANGE: "Ngày kết thúc phải sau ngày bắt đầu",
+        PERCENTAGE_EXCEED_100: "Phần trăm giảm giá không được vượt quá 100%",
+        ADD_PRODUCTS_SUCCESS: "Thêm sản phẩm vào giảm giá thành công",
+        REMOVE_PRODUCTS_SUCCESS: "Xóa sản phẩm khỏi giảm giá thành công",
+        PRODUCTS_REQUIRED: "Danh sách sản phẩm là bắt buộc",
+        PRODUCTS_NOT_FOUND: "Một số sản phẩm không tồn tại"
     }
 };
 

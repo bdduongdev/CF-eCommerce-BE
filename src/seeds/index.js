@@ -7,6 +7,7 @@ import seedProducts from "./ProductSeeder.js";
 import seedUsers from "./UserSeeder.js";
 import seedOrders from "./OrderSeeder.js";
 import seedOrderDetails from "./OrderDetailSeeder.js";
+import { seedDiscounts } from "./DiscountSeeder.js";
 
 dotenv.config();
 
@@ -25,6 +26,7 @@ mongoose
       await seedUsers();
       await seedOrders();
       await seedOrderDetails();
+      await seedDiscounts();
 
       console.log("Đã hoàn thành seed dữ liệu!");
       process.exit(0);
