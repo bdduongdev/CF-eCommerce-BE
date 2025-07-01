@@ -10,8 +10,10 @@ import { userUpdateSchema } from '../validations/user.validation.js';
 
 const router = express.Router();
 
-router.get('/', verifyToken, isAdmin, getAllUsers);
-router.get('/:id', verifyToken, getUserById);
-router.put('/:id', verifyToken, isAdmin, validate(userUpdateSchema), updateUser);
+router.use(verifyToken, isAdmin);
+
+router.get('/', getAllUsers);
+router.get('/:id', getUserById);
+router.put('/:id', validate(userUpdateSchema), updateUser);
 
 export default router;

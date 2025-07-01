@@ -19,12 +19,10 @@ const router = express.Router();
 
 router.get("/", getAllStorages);
 
-router.use(verifyToken);
-router.use(isAdmin);
+router.use(verifyToken, isAdmin);
 
 router.get("/trashed", getTrashedStorages);
 router.put("/restore/:id", restoreStorage);
-
 router.get("/:id", getStorageById);
 router.post("/", validate(createStorageSchema), createStorage);
 router.put("/:id", validate(updateStorageSchema), updateStorage);

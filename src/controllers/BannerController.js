@@ -89,14 +89,16 @@ const getBannerById = handleAsync(async (req, res, next) => {
 const createBanner = handleAsync(async (req, res, next) => {
   const {
     title,
-    image_url,
     link_url,
     position,
     is_active,
     start_date,
     end_date,
   } = req.body;
-
+  let image_url = req.body.image_url;
+  if (req.file) {
+    image_url = `/uploads/banners/${req.file.filename}`;
+  }
   const newBanner = await Banner.create({
     title,
     image_url,
@@ -106,7 +108,6 @@ const createBanner = handleAsync(async (req, res, next) => {
     start_date,
     end_date,
   });
-
   res.status(201).json({
     success: true,
     data: newBanner,
@@ -117,28 +118,24 @@ const createBanner = handleAsync(async (req, res, next) => {
 const updateBanner = handleAsync(async (req, res, next) => {
   const { id } = req.params;
   const updateData = req.body;
-
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return next(createError(400, message.BANNER.INVALID_ID));
   }
-
   const banner = await Banner.findById(id);
-
   if (!banner) {
     return next(createError(404, message.BANNER.NOT_FOUND));
   }
-
   if (banner.is_deleted) {
     return next(createError(400, message.BANNER.CANNOT_UPDATE_DELETED));
   }
-
+  if (req.file) {
+    updateData.image_url = `/uploads/banners/${req.file.filename}`;
+  }
   updateData.updated_at = Date.now();
-
   const updatedBanner = await Banner.findByIdAndUpdate(id, updateData, {
     new: true,
     runValidators: true,
   });
-
   res.status(200).json({
     success: true,
     data: updatedBanner,

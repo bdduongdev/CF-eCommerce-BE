@@ -1,6 +1,7 @@
 import Review from "../models/Review.js";
 import User from "../models/User.js";
 import Product from "../models/Product.js";
+import ProductVariant from "../models/ProductVariant.js";
 import { faker } from '@faker-js/faker';
 
 const seedReviews = async (count = 50) => {
@@ -9,26 +10,25 @@ const seedReviews = async (count = 50) => {
     console.log("Đã xóa dữ liệu Review cũ");
 
     const users = await User.find({ role: "customer" });
-    const products = await Product.find();
+    const variants = await ProductVariant.find().populate('product_id');
 
-    if (users.length === 0 || products.length === 0) {
-      console.log("Không đủ dữ liệu users hoặc products để tạo đánh giá");
+    if (users.length === 0 || variants.length === 0) {
+      console.log("Không đủ dữ liệu users hoặc variants để tạo đánh giá");
       return false;
     }
 
     const reviews = [];
-    const reviewsPerProduct = Math.min(Math.ceil(count / products.length), users.length);
+    const reviewsPerVariant = Math.min(Math.ceil(count / variants.length), users.length);
 
-    for (const product of products) {
+    for (const variant of variants) {
       const shuffledUsers = [...users].sort(() => 0.5 - Math.random());
-      const selectedUsers = shuffledUsers.slice(0, reviewsPerProduct);
-      
+      const selectedUsers = shuffledUsers.slice(0, reviewsPerVariant);
       for (const user of selectedUsers) {
         const reviewDate = faker.date.recent({ days: 30 });
-        
         reviews.push({
           user_id: user._id,
-          product_id: product._id,
+          product_id: variant.product_id?._id, // optional, for reference
+          variant_id: variant._id,
           rating: faker.number.int({ min: 1, max: 5 }),
           comment: faker.helpers.arrayElement([
             faker.lorem.paragraph(),
@@ -43,16 +43,15 @@ const seedReviews = async (count = 50) => {
             "Sản phẩm tạm ổn, nhưng giá hơi cao.",
             "Chất lượng không như mong đợi."
           ]),
-          review_date: reviewDate
+          created_at: reviewDate,
+          updated_at: reviewDate
         });
       }
     }
 
     const limitedReviews = reviews.slice(0, count);
-    
     await Review.insertMany(limitedReviews);
     console.log(`Đã thêm ${limitedReviews.length} đánh giá mẫu`);
-    
     return true;
   } catch (error) {
     console.error(`Lỗi khi seed Review: ${error.message}`);

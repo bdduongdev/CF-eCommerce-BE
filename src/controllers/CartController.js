@@ -4,6 +4,8 @@ import Cart from '../models/Cart.js';
 import CartItem from '../models/CartItem.js';
 import ProductVariant from '../models/ProductVariant.js';
 import message from '../constants/index.js';
+import DiscountProduct from '../models/DiscountProduct.js';
+import Discount from '../models/Discount.js';
 
 // Add product to cart
 const addToCart = handleAsync(async (req, res, next) => {
@@ -90,7 +92,7 @@ const getCart = handleAsync(async (req, res, next) => {
     const cartItems = await CartItem.find({ cart_id: cart._id })
         .populate({
             path: 'variant_id',
-            select: 'price stock_quantity image_url sku',
+            select: 'price stock_quantity image_url sku product_id',
             populate: [
                 { path: 'product_id', select: 'product_name slug' },
                 { path: 'color_id', select: 'color_name' },
@@ -98,7 +100,36 @@ const getCart = handleAsync(async (req, res, next) => {
             ]
         }).lean();
 
-    const totalPrice = cartItems.reduce((total, item) => {
+    // Lấy discount cho từng sản phẩm trong giỏ hàng
+    const now = new Date();
+    const itemsWithDiscount = await Promise.all(cartItems.map(async (item) => {
+        const productId = item.variant_id.product_id?._id || item.variant_id.product_id;
+        let discount = null;
+        if (productId) {
+            // Tìm discount-product
+            const discountProduct = await DiscountProduct.findOne({ product_id: productId });
+            if (discountProduct) {
+                // Tìm discount còn hiệu lực
+                discount = await Discount.findOne({
+                    _id: discountProduct.discount_id,
+                    is_active: true,
+                    start_date: { $lte: now },
+                    end_date: { $gte: now }
+                }).lean();
+            }
+        }
+        return {
+            ...item,
+            discount: discount ? {
+                _id: discount._id,
+                discount_type: discount.discount_type,
+                discount_value: discount.discount_value,
+                description: discount.description
+            } : null
+        };
+    }));
+
+    const totalPrice = itemsWithDiscount.reduce((total, item) => {
         return total + item.price * item.quantity;
     }, 0);
         
@@ -108,9 +139,9 @@ const getCart = handleAsync(async (req, res, next) => {
         data: {
             cart_id: cart._id,
             user_id: cart.user_id,
-            items: cartItems,
+            items: itemsWithDiscount,
             total_price: totalPrice,
-            total_items: cartItems.reduce((sum, item) => sum + item.quantity, 0)
+            total_items: itemsWithDiscount.reduce((sum, item) => sum + item.quantity, 0)
         }
     });
 });
@@ -170,4 +201,129 @@ const updateCartItemQuantity = handleAsync(async (req, res, next) => {
     });
 });
 
-export { addToCart, getCart, removeFromCart, updateCartItemQuantity };
+// Thanh toán nhanh các sản phẩm đã chọn trong giỏ hàng
+const checkoutSelectedCartItems = handleAsync(async (req, res, next) => {
+    const userId = req.user.id;
+    const { cartItemIds, shipping_address, payment_method, coupon_code, note } = req.body;
+
+    if (!Array.isArray(cartItemIds) || cartItemIds.length === 0) {
+        return next(createError(400, 'Vui lòng chọn sản phẩm để thanh toán.'));
+    }
+
+    // Lấy các cart item đã chọn
+    const cartItems = await CartItem.find({ _id: { $in: cartItemIds }, cart_id: (await Cart.findOne({ user_id: userId }))._id })
+        .populate({
+            path: 'variant_id',
+            select: 'price stock_quantity image_url sku',
+            populate: [
+                { path: 'product_id', select: 'product_name slug' },
+                { path: 'color_id', select: 'color_name' },
+                { path: 'storage_id', select: 'storage_name' }
+            ]
+        });
+
+    if (cartItems.length === 0) {
+        return next(createError(400, 'Không tìm thấy sản phẩm hợp lệ trong giỏ hàng.'));
+    }
+
+    // Kiểm tra tồn kho
+    for (const item of cartItems) {
+        if (item.variant_id.stock_quantity < item.quantity) {
+            return next(createError(400, message.ORDER.OUT_OF_STOCK(item.variant_id.product_id.product_name, item.variant_id.stock_quantity)));
+        }
+    }
+
+    // Tính toán giá
+    let subtotal = cartItems.reduce((total, item) => {
+        return total + (item.variant_id.price * item.quantity);
+    }, 0);
+
+    let discountAmount = 0;
+    let coupon_id = null;
+
+    // Áp dụng coupon nếu có
+    if (coupon_code) {
+        const Coupon = (await import('../models/Coupon.js')).default;
+        const coupon = await Coupon.findOne({ 
+            code: coupon_code, 
+            is_deleted: false,
+            expires_at: { $gt: new Date() }
+        });
+        if (coupon) {
+            if (coupon.discount_type === 'percentage') {
+                discountAmount = (subtotal * coupon.discount_value) / 100;
+            } else {
+                discountAmount = coupon.discount_value;
+            }
+            coupon_id = coupon._id;
+        }
+    }
+
+    // Tính phí vận chuyển (giả lập)
+    const shippingFee = 0;
+    const totalAmount = subtotal - discountAmount + shippingFee;
+
+    // Tạo order_number thủ công
+    const orderNumber = `ORD${Date.now()}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+
+    // Tạo đơn hàng
+    const Order = (await import('../models/Order.js')).default;
+    const OrderDetail = (await import('../models/OrderDetail.js')).default;
+    const order = await Order.create({
+        user_id: userId,
+        coupon_id,
+        order_number: orderNumber,
+        shipping_address,
+        payment_method,
+        subtotal,
+        discount_amount: discountAmount,
+        shipping_fee: shippingFee,
+        total_amount: totalAmount,
+        note
+    });
+
+    // Tạo chi tiết đơn hàng
+    const orderDetails = [];
+    for (const item of cartItems) {
+        const orderDetail = await OrderDetail.create({
+            order_id: order._id,
+            product_variant_id: item.variant_id._id,
+            product_info: {
+                product_name: item.variant_id.product_id.product_name,
+                color_name: item.variant_id.color_id.color_name,
+                storage_name: item.variant_id.storage_id.storage_name,
+                sku: item.variant_id.sku,
+                image_url: item.variant_id.image_url
+            },
+            quantity: item.quantity,
+            unit_price: item.variant_id.price,
+            total_price: item.quantity * item.variant_id.price
+        });
+        orderDetails.push(orderDetail);
+
+        // Cập nhật tồn kho
+        await ProductVariant.findByIdAndUpdate(
+            item.variant_id._id,
+            { $inc: { stock_quantity: -item.quantity } }
+        );
+    }
+
+    // Xóa các cart item đã thanh toán
+    await CartItem.deleteMany({ _id: { $in: cartItemIds } });
+
+    // Populate thông tin đơn hàng
+    const populatedOrder = await Order.findById(order._id)
+        .populate('user_id', 'fullname email phone')
+        .populate('coupon_id', 'code discount_value discount_type');
+
+    res.status(201).json({
+        success: true,
+        message: 'Thanh toán thành công',
+        data: {
+            order: populatedOrder,
+            order_details: orderDetails
+        }
+    });
+});
+
+export { addToCart, getCart, removeFromCart, updateCartItemQuantity, checkoutSelectedCartItems };

@@ -10,12 +10,14 @@ import validate from "../middlewares/validate.js";
 
 const router = express.Router();
 
-router.get("/", verifyToken, isAdminOrCustomer, getProfile);
+router.use(verifyToken, isAdminOrCustomer);
 
-router.put("/", verifyToken, isAdminOrCustomer, updateProfile);
+router.get("/", getProfile);
 
-router.put("/password", verifyToken, isAdminOrCustomer, updatePassword);
+router.put("/", updateProfile);
 
-router.put("/avatar", verifyToken, isAdminOrCustomer, updateAvatar);
+router.put("/password", updatePassword);
+
+router.put("/avatar", updateAvatar);
 
 export default router; 

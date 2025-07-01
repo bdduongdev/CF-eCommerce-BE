@@ -58,36 +58,88 @@ const getAllReviews = handleAsync(async (req, res, next) => {
 });
 
 const createReview = handleAsync(async (req, res, next) => {
-  const { product_id, rating, comment } = req.body;
-  const user_id = req.user.id;
-
-  if (!product_id || !rating) {
-    return next(createError(400, "Sản phẩm và đánh giá là bắt buộc"));
+  const { variant_id, product_id, user_id, rating, comment } = req.body;
+  if (!variant_id || !user_id || !rating) {
+    return next(createError(400, 'Thiếu thông tin đánh giá.'));
   }
-
-  const existingReview = await Review.findOne({ user_id, product_id });
-  if (existingReview) {
-    return next(createError(400, "Bạn đã đánh giá sản phẩm này rồi"));
-  }
-
   const review = new Review({
-    user_id,
+    variant_id,
     product_id,
+    user_id,
     rating,
-    comment,
+    comment
   });
-
   await review.save();
-
-  const populatedReview = await Review.findById(review._id)
-    .populate("user_id", "fullname email")
-    .populate("product_id", "product_name");
-
   res.status(201).json({
     success: true,
-    data: populatedReview,
-    message: message.REVIEW?.CREATE_SUCCESS || "Thêm đánh giá thành công",
+    message: 'Tạo đánh giá thành công!',
+    data: review
   });
 });
 
-export { getAllReviews, createReview };
+const getReviewsByVariant = handleAsync(async (req, res, next) => {
+  const { variant_id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(variant_id)) {
+    return next(createError(400, 'ID biến thể không hợp lệ.'));
+  }
+  const reviews = await Review.find({ variant_id }).populate('user_id', 'name email');
+  res.status(200).json({
+    success: true,
+    message: message.REVIEW.GET_ALL_SUCCESS,
+    data: reviews
+  });
+});
+
+const getReviewsByProduct = handleAsync(async (req, res, next) => {
+  const { product_id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(product_id)) {
+    return next(createError(400, 'ID sản phẩm không hợp lệ.'));
+  }
+  const reviews = await Review.find({ product_id }).populate('user_id', 'name email');
+  res.status(200).json({
+    success: true,
+    message: message.REVIEW.GET_ALL_SUCCESS,
+    data: reviews
+  });
+});
+
+const updateReview = handleAsync(async (req, res, next) => {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return next(createError(400, 'ID đánh giá không hợp lệ.'));
+  }
+  const updateData = req.body;
+  const review = await Review.findByIdAndUpdate(id, updateData, { new: true, runValidators: true });
+  if (!review) {
+    return next(createError(404, 'Không tìm thấy đánh giá.'));
+  }
+  res.status(200).json({
+    success: true,
+    message: 'Cập nhật đánh giá thành công!',
+    data: review
+  });
+});
+
+const deleteReview = handleAsync(async (req, res, next) => {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return next(createError(400, 'ID đánh giá không hợp lệ.'));
+  }
+  const review = await Review.findByIdAndDelete(id);
+  if (!review) {
+    return next(createError(404, 'Không tìm thấy đánh giá.'));
+  }
+  res.status(200).json({
+    success: true,
+    message: 'Xóa đánh giá thành công!'
+  });
+});
+
+export {
+  getAllReviews,
+  createReview,
+  getReviewsByVariant,
+  getReviewsByProduct,
+  updateReview,
+  deleteReview
+};

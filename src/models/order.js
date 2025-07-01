@@ -20,7 +20,6 @@ const OrderSchema = new Schema({
     type: Date,
     default: Date.now
   },
-  // Thông tin giao hàng
   shipping_address: {
     fullname: {
       type: String,
@@ -58,7 +57,6 @@ const OrderSchema = new Schema({
       trim: true
     }
   },
-  // Thông tin thanh toán
   payment_method: {
     type: String,
     enum: ['cod', 'bank_transfer', 'credit_card', 'momo', 'vnpay'],
@@ -69,7 +67,6 @@ const OrderSchema = new Schema({
     enum: ['pending', 'paid', 'failed', 'refunded'],
     default: 'pending'
   },
-  // Thông tin đơn hàng
   subtotal: {
     type: Number,
     required: true,
@@ -87,18 +84,15 @@ const OrderSchema = new Schema({
     type: Number,
     required: true
   },
-  // Trạng thái đơn hàng
   status: {
     type: String,
     enum: ['pending', 'confirmed', 'processing', 'shipped', 'delivered', 'cancelled', 'returned'],
     default: 'pending'
   },
-  // Ghi chú
   note: {
     type: String,
     trim: true
   },
-  // Thông tin vận chuyển
   tracking_number: {
     type: String,
     trim: true
@@ -134,7 +128,6 @@ const OrderSchema = new Schema({
   ]
 });
 
-// Pre-save hook để tạo order_number tự động
 OrderSchema.pre('save', function(next) {
   if (!this.order_number) {
     const timestamp = Date.now().toString();

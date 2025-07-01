@@ -20,8 +20,7 @@ const router = express.Router();
 router.get("/", getAllCategories);
 router.get("/detail/:id", getCategoryById);
 
-router.use(verifyToken);
-router.use(isAdmin);
+router.use(verifyToken, isAdmin);
 
 router.get("/trashed", getTrashedCategories);
 router.post("/create", validate(createCategorySchema), createCategory);

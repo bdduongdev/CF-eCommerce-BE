@@ -13,6 +13,7 @@ import CartRoutes from "./CartRoutes.js";
 import OrderRoutes from "./OrderRoutes.js";
 import PaymentRoutes from "./PaymentRoutes.js";
 import DiscountRoutes from "./DiscountRoutes.js";
+import ProductVariantRoutes from './ProductVariantRoutes.js';
 
 const router = express.Router();
 
@@ -30,5 +31,6 @@ router.use("/cart", CartRoutes);
 router.use("/orders", OrderRoutes);
 router.use("/payments", PaymentRoutes);
 router.use("/discounts", DiscountRoutes);
+router.use('/variant', ProductVariantRoutes);
 
 export default router;
