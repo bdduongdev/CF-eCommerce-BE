@@ -134,31 +134,26 @@ const getTrashedProducts = handleAsync(async (req, res, next) => {
 });
 
 const getProductById = handleAsync(async (req, res, next) => {
-  // TODO: Refactor this function. It should probably fetch a ProductVariant by ID.
   const { id } = req.params;
 
-  const variant = await ProductVariant.findById(id)
-    .populate({
-      path: 'product_id',
-      populate: {
-        path: 'category_id',
-        select: 'category_name'
-      }
-    })
-    .populate('color_id', 'color_name')
-    .populate('storage_id', 'storage_name');
-
-  if (!variant) {
-    return next(createError(404, "Không tìm thấy biến thể sản phẩm"));
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return next(createError(400, message.PRODUCT.INVALID_ID));
   }
-  
-  const variantObj = variant.toObject();
-  const productWithFullImageUrls = processProductImages(req, variantObj);
+
+  const product = await Product.findById(id)
+    .populate('category_id', 'category_name');
+
+  if (!product) {
+    return next(createError(404, message.PRODUCT.NOT_FOUND));
+  }
+
+  const productObj = product.toObject();
+  const productWithFullImageUrls = processProductImages(req, productObj);
 
   res.status(200).json({
     success: true,
     data: productWithFullImageUrls,
-    message: "Lấy chi tiết biến thể sản phẩm thành công.",
+    message: message.PRODUCT.GET_BY_ID_SUCCESS,
   });
 });
 
@@ -232,159 +227,67 @@ const createProduct = handleAsync(async (req, res, next) => {
     slug,
     description,
     category_id,
-    status,
-    variants
+    status
   } = req.body;
 
   // Basic validation
-  if (!product_name || !category_id || !variants || !Array.isArray(variants) || variants.length === 0) {
-    return next(createError(400, "Thông tin sản phẩm không hợp lệ. Yêu cầu product_name, category_id và mảng 'variants'."));
+  if (!product_name || !category_id) {
+    return next(createError(400, "Thông tin sản phẩm không hợp lệ. Yêu cầu product_name và category_id."));
   }
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    // 1. Create the base product
-    let productSlug = slug;
-    if (!productSlug && product_name) {
-      productSlug = product_name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-    }
-
-    const newProduct = new Product({
-      product_name,
-      slug: productSlug,
-      description,
-      category_id,
-      status: status || 'active'
-    });
-
-    const savedProduct = await newProduct.save({ session });
-
-    // 2. Create product variants
-    const variantDocs = variants.map(v => ({
-      product_id: savedProduct._id,
-      color_id: v.color_id,
-      storage_id: v.storage_id,
-      price: v.price,
-      stock_quantity: v.stock_quantity,
-      sku: `${productSlug}-${v.storage_id}-${v.color_id}`,
-    }));
-
-    const createdVariants = await ProductVariant.insertMany(variantDocs, { session });
-
-    await session.commitTransaction();
-
-    res.status(201).json({
-      success: true,
-      message: message.PRODUCT.CREATE_SUCCESS,
-      data: {
-        product: savedProduct,
-        variants: createdVariants
-      }
-    });
-
-  } catch (error) {
-    await session.abortTransaction();
-    if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map((val) => val.message);
-      return next(createError(400, messages.join(", ")));
-    }
-    return next(error);
-  } finally {
-    session.endSession();
+  let productSlug = slug;
+  if (!productSlug && product_name) {
+    productSlug = product_name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
   }
+
+  const newProduct = new Product({
+    product_name,
+    slug: productSlug,
+    description,
+    category_id,
+    status: status || 'active'
+  });
+
+  const savedProduct = await newProduct.save();
+
+  res.status(201).json({
+    success: true,
+    message: message.PRODUCT.CREATE_SUCCESS,
+    data: savedProduct
+  });
 });
 
 const updateProduct = handleAsync(async (req, res, next) => {
   const { id } = req.params;
-  const { product_name, slug, description, category_id, status, variants } = req.body;
+  const { product_name, slug, description, category_id, status } = req.body;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return next(createError(400, message.PRODUCT.INVALID_ID));
   }
 
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    const product = await Product.findById(id).session(session);
-    if (!product) {
-      await session.abortTransaction();
-      session.endSession();
-      return next(createError(404, message.PRODUCT.NOT_FOUND));
-    }
-
-    product.product_name = product_name || product.product_name;
-    product.description = description || product.description;
-    product.category_id = category_id || product.category_id;
-    product.status = status || product.status;
-
-    if (product_name && !slug) {
-      product.slug = product_name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
-    } else if (slug) {
-      product.slug = slug;
-    }
-
-    const updatedProduct = await product.save({ session });
-
-    // 2. Handle variants if provided
-    if (variants && Array.isArray(variants)) {
-      const existingVariants = await ProductVariant.find({ product_id: id }).session(session);
-      const existingVariantIds = existingVariants.map(v => v._id.toString());
-      const incomingVariantIds = variants.filter(v => v._id).map(v => v._id);
-
-      const variantsToDelete = existingVariantIds.filter(id => !incomingVariantIds.includes(id));
-      if (variantsToDelete.length > 0) {
-        await ProductVariant.updateMany(
-          { _id: { $in: variantsToDelete } },
-          { $set: { is_deleted: true, updated_at: Date.now() } },
-          { session }
-        );
-      }
-      
-      for (const variantData of variants) {
-        if (variantData._id && existingVariantIds.includes(variantData._id)) {
-          await ProductVariant.findByIdAndUpdate(
-            variantData._id, 
-            { $set: variantData },
-            { session, runValidators: true }
-          );
-        } else {
-          const newVariant = new ProductVariant({
-            ...variantData,
-            product_id: id,
-            sku: `${product.slug}-${variantData.storage_id}-${variantData.color_id}`
-          });
-          await newVariant.save({ session });
-        }
-      }
-    }
-
-    await session.commitTransaction();
-
-    const finalProduct = await Product.findById(id).lean();
-    const finalVariants = await ProductVariant.find({ product_id: id, is_deleted: false }).lean();
-
-    res.status(200).json({
-      success: true,
-      message: message.PRODUCT.UPDATE_SUCCESS,
-      data: {
-        product: finalProduct,
-        variants: finalVariants
-      },
-    });
-
-  } catch (error) {
-    await session.abortTransaction();
-    if (error.name === "ValidationError") {
-      const messages = Object.values(error.errors).map((val) => val.message);
-      return next(createError(400, messages.join(", ")));
-    }
-    return next(error);
-  } finally {
-    session.endSession();
+  const product = await Product.findById(id);
+  if (!product) {
+    return next(createError(404, message.PRODUCT.NOT_FOUND));
   }
+
+  product.product_name = product_name || product.product_name;
+  product.description = description || product.description;
+  product.category_id = category_id || product.category_id;
+  product.status = status || product.status;
+
+  if (product_name && !slug) {
+    product.slug = product_name.toLowerCase().replace(/\s+/g, '-').replace(/[^\w-]+/g, '');
+  } else if (slug) {
+    product.slug = slug;
+  }
+
+  const updatedProduct = await product.save();
+
+  res.status(200).json({
+    success: true,
+    message: message.PRODUCT.UPDATE_SUCCESS,
+    data: updatedProduct
+  });
 });
 
 const deleteProduct = handleAsync(async (req, res, next) => {

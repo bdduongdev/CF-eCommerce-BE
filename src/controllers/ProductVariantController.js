@@ -227,9 +227,29 @@ const getAllProductVariants = handleAsync(async (req, res, next) => {
   });
 });
 
+const getProductVariantById = handleAsync(async (req, res, next) => {
+  const { id } = req.params;
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    return next(createError(400, "ID biến thể không hợp lệ."));
+  }
+  const variant = await ProductVariant.findById(id)
+    .populate('product_id')
+    .populate('color_id')
+    .populate('storage_id');
+  if (!variant) {
+    return next(createError(404, "Không tìm thấy biến thể sản phẩm."));
+  }
+  res.status(200).json({
+    success: true,
+    message: "Lấy chi tiết biến thể thành công.",
+    data: variant,
+  });
+});
+
 export {
   createProductVariant,
   updateProductVariant,
   deleteProductVariant,
-  getAllProductVariants
+  getAllProductVariants,
+  getProductVariantById
 }; 

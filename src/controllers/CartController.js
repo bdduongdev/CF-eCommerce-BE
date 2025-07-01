@@ -103,7 +103,9 @@ const getCart = handleAsync(async (req, res, next) => {
     // Lấy discount cho từng sản phẩm trong giỏ hàng
     const now = new Date();
     const itemsWithDiscount = await Promise.all(cartItems.map(async (item) => {
-        const productId = item.variant_id.product_id?._id || item.variant_id.product_id;
+        const productId = item.variant_id && item.variant_id.product_id
+            ? item.variant_id.product_id._id || item.variant_id.product_id
+            : null;
         let discount = null;
         if (productId) {
             // Tìm discount-product
