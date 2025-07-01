@@ -1,5 +1,7 @@
 import Product from "../models/Product.js";
 import ProductVariant from "../models/ProductVariant.js";
+import Discount from "../models/Discount.js";
+import DiscountProduct from "../models/DiscountProduct.js";
 import createError from "../utils/createError.js";
 import handleAsync from "../utils/handleAsync.js";
 import mongoose from "mongoose";
@@ -56,100 +58,28 @@ const processProductsImages = (req, products) => {
 };
 
 const getAllProducts = handleAsync(async (req, res, next) => {
-  const {
-    category,
-    search,
-    minPrice,
-    maxPrice,
-    sort,
-    limit = 10,
-    page = 1,
-    status,
-    color,
-    storage
-  } = req.query;
-
+  const { category, search, status, limit = 10, page = 1 } = req.query;
   const skip = (parseInt(page) - 1) * parseInt(limit);
-
-  // --- Aggregation Pipeline based on ProductVariants ---
-  const pipeline = [];
-
-  // Stage 1: Initial match on ProductVariant fields
-  const matchStage = { is_deleted: false };
-  if (status) matchStage.status = status;
-  if (minPrice) matchStage.price = { ...matchStage.price, $gte: parseFloat(minPrice) };
-  if (maxPrice) matchStage.price = { ...matchStage.price, $lte: parseFloat(maxPrice) };
-  if (color) matchStage.color_id = new mongoose.Types.ObjectId(color);
-  if (storage) matchStage.storage_id = new mongoose.Types.ObjectId(storage);
-  
-  pipeline.push({ $match: matchStage });
-
-  // Stage 2: Join with products collection
-  pipeline.push({
-    $lookup: { from: 'products', localField: 'product_id', foreignField: '_id', as: 'product' }
-  });
-  pipeline.push({ $unwind: '$product' });
-
-  // Stage 3: Match on parent product fields
-  const productMatchStage = { 'product.is_deleted': false };
-  if (category) {
-    productMatchStage['product.category_id'] = new mongoose.Types.ObjectId(category);
-  }
+  const query = { is_deleted: false };
+  if (category) query.category_id = category;
+  if (status) query.status = status;
   if (search) {
-    productMatchStage.$or = [
-      { 'product.product_name': { $regex: search, $options: 'i' } },
-      { 'product.slug': { $regex: search, $options: 'i' } },
-      { 'sku': { $regex: search, $options: 'i' } }
+    query.$or = [
+      { product_name: { $regex: search, $options: 'i' } },
+      { slug: { $regex: search, $options: 'i' } }
     ];
   }
-  pipeline.push({ $match: productMatchStage });
-  
-  // --- Execute pipeline for counting total documents ---
-  const countPipeline = [...pipeline, { $count: "total" }];
-  const totalResult = await ProductVariant.aggregate(countPipeline);
-  const total = totalResult.length > 0 ? totalResult[0].total : 0;
-  
-  // Stage 4: Sorting
-  let sortOptions = {};
-  if (sort) {
-    const [field, order] = sort.split(":");
-    sortOptions[field === 'product_name' ? 'product.product_name' : field] = order === "desc" ? -1 : 1;
-  } else {
-    sortOptions = { 'product.created_at': -1, 'price': 1 };
-  }
-  pipeline.push({ $sort: sortOptions });
-
-  // Stage 5: Pagination
-  pipeline.push({ $skip: skip });
-  pipeline.push({ $limit: parseInt(limit) });
-
-  // Stage 6: Join with other collections for details
-  pipeline.push(
-    { $lookup: { from: 'productcolors', localField: 'color_id', foreignField: '_id', as: 'color' } },
-    { $unwind: '$color' },
-    { $lookup: { from: 'productstorages', localField: 'storage_id', foreignField: '_id', as: 'storage' } },
-    { $unwind: '$storage' },
-    { $lookup: { from: 'categories', localField: 'product.category_id', foreignField: '_id', as: 'product.category' } },
-    { $unwind: '$product.category' }
-  );
-
-  // Stage 7: Final Projection to shape the output
-  pipeline.push({
-    $project: {
-      'product.category_id': 0, 'product.is_deleted': 0, 'product.status': 0,
-      'color_id': 0, 'storage_id': 0, 'is_deleted': 0, '__v': 0, 'product.__v': 0,
-      'color.__v': 0, 'storage.__v': 0, 'product.category.__v': 0,
-    }
-  });
-
-  const products = await ProductVariant.aggregate(pipeline);
-  const productsWithFullImageUrls = processProductsImages(req, products);
-
+  const total = await Product.countDocuments(query);
+  const products = await Product.find(query)
+    .sort({ created_at: -1 })
+    .skip(skip)
+    .limit(parseInt(limit))
+    .select('_id product_name slug description status category_id created_at updated_at');
   res.status(200).json({
     success: true,
-    message: message.PRODUCT.GET_ALL_SUCCESS,
+    message: 'Lấy danh sách sản phẩm thành công!',
     data: {
-      products: productsWithFullImageUrls,
+      products,
       pagination: {
         total,
         page: parseInt(page),
@@ -252,7 +182,18 @@ const getGroupedProductBySlug = handleAsync(async (req, res, next) => {
     return next(createError(404, "Sản phẩm này chưa có biến thể nào"));
   }
   
-  // 3. Process variants and aggregate options
+  // 3. Find active discounts for the base product
+  const discountProducts = await DiscountProduct.find({ product_id: baseProduct._id });
+  const discountIds = discountProducts.map(dp => dp.discount_id);
+
+  const activeDiscounts = await Discount.find({
+    _id: { $in: discountIds },
+    is_active: true,
+    start_date: { $lte: new Date() },
+    end_date: { $gte: new Date() }
+  }).select('discount_type discount_value description');
+
+  // 4. Process variants and aggregate options
   const availableColors = [...new Map(variants.map(item => [item.color_id._id.toString(), item.color_id])).values()];
   const availableStorages = [...new Map(variants.map(item => [item.storage_id._id.toString(), item.storage_id])).values()];
 
@@ -264,10 +205,11 @@ const getGroupedProductBySlug = handleAsync(async (req, res, next) => {
       variant_id: processedVariant._id,
       color: processedVariant.color_id,
       storage: processedVariant.storage_id,
+      discounts: activeDiscounts, // Attach discounts here
     };
   });
   
-  // 4. Construct the response
+  // 5. Construct the response
   const responseData = {
     ...baseProduct.toObject(),
     options: {
@@ -291,7 +233,7 @@ const createProduct = handleAsync(async (req, res, next) => {
     description,
     category_id,
     status,
-    variants // Expecting an array of variants
+    variants
   } = req.body;
 
   // Basic validation
@@ -326,8 +268,7 @@ const createProduct = handleAsync(async (req, res, next) => {
       storage_id: v.storage_id,
       price: v.price,
       stock_quantity: v.stock_quantity,
-      sku: `${productSlug}-${v.storage_id}-${v.color_id}`, // Note: this is a simplistic SKU
-      // image_url and image_gallery would be handled separately, perhaps in an update step
+      sku: `${productSlug}-${v.storage_id}-${v.color_id}`,
     }));
 
     const createdVariants = await ProductVariant.insertMany(variantDocs, { session });
@@ -356,7 +297,7 @@ const createProduct = handleAsync(async (req, res, next) => {
 });
 
 const updateProduct = handleAsync(async (req, res, next) => {
-  const { id } = req.params; // Base product ID
+  const { id } = req.params;
   const { product_name, slug, description, category_id, status, variants } = req.body;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
@@ -374,7 +315,6 @@ const updateProduct = handleAsync(async (req, res, next) => {
       return next(createError(404, message.PRODUCT.NOT_FOUND));
     }
 
-    // 1. Update base product details
     product.product_name = product_name || product.product_name;
     product.description = description || product.description;
     product.category_id = category_id || product.category_id;
@@ -448,7 +388,7 @@ const updateProduct = handleAsync(async (req, res, next) => {
 });
 
 const deleteProduct = handleAsync(async (req, res, next) => {
-  const { id } = req.params; // Base Product ID
+  const { id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return next(createError(400, message.PRODUCT.INVALID_ID));
@@ -499,7 +439,7 @@ const deleteProduct = handleAsync(async (req, res, next) => {
 });
 
 const restoreProduct = handleAsync(async (req, res, next) => {
-  const { id } = req.params; // Base Product ID
+  const { id } = req.params;
 
   if (!mongoose.Types.ObjectId.isValid(id)) {
     return next(createError(400, message.PRODUCT.INVALID_ID));

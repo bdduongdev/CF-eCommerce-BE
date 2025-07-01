@@ -19,8 +19,7 @@ const router = express.Router();
 
 router.get("/", getAllColors);
 
-router.use(verifyToken);
-router.use(isAdmin);
+router.use(verifyToken, isAdmin);
 
 router.get("/trashed", getTrashedColors);
 router.put("/restore/:id", restoreColor);

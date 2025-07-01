@@ -40,6 +40,30 @@ export const createOrderFromCartSchema = Joi.object({
   })
 });
 
+// Validation cho tạo đơn hàng chung
+export const createOrderSchema = Joi.object({
+  shipping_address: shippingAddressSchema.required(),
+  payment_method: Joi.string().valid('cod', 'bank_transfer', 'credit_card', 'momo', 'vnpay').required().messages({
+    'any.only': 'Phương thức thanh toán không hợp lệ'
+  }),
+  note: Joi.string().optional().trim().max(500).messages({
+    'string.max': 'Ghi chú không được vượt quá 500 ký tự'
+  }),
+  items: Joi.array().items(Joi.object({
+    product_variant_id: Joi.string().required().messages({
+      'string.empty': 'ID biến thể sản phẩm không được để trống'
+    }),
+    quantity: Joi.number().integer().min(1).required().messages({
+      'number.base': 'Số lượng phải là số',
+      'number.integer': 'Số lượng phải là số nguyên',
+      'number.min': 'Số lượng phải ít nhất là 1'
+    })
+  })).min(1).required().messages({
+    'array.base': 'Danh sách sản phẩm phải là một mảng',
+    'array.min': 'Phải có ít nhất một sản phẩm trong đơn hàng'
+  })
+});
+
 // Validation cho tạo đơn hàng trực tiếp
 export const createOrderDirectSchema = Joi.object({
   variant_id: Joi.string().required().messages({

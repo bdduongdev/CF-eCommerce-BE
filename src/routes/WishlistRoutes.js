@@ -8,8 +8,10 @@ import validate from "../middlewares/validate.js";
 
 const router = express.Router();
 
-router.post("/", verifyToken, isCustomer, addToWishlist);
+router.use(verifyToken, isCustomer);
 
-router.get("/", verifyToken, isCustomer, getWishlistItems);
+router.post("/", addToWishlist);
+
+router.get("/", getWishlistItems);
 
 export default router; 

@@ -77,9 +77,7 @@ const createOrderFromCart = handleAsync(async (req, res, next) => {
   const totalAmount = subtotal - discountAmount + shippingFee;
 
   // Tạo order_number thủ công
-  const timestamp = Date.now().toString();
-  const random = Math.floor(Math.random() * 1000).toString().padStart(3, '0');
-  const orderNumber = `ORD${timestamp}${random}`;
+  const orderNumber = `ORD${Date.now()}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
 
   // Tạo đơn hàng
   const order = await Order.create({
@@ -536,6 +534,104 @@ const updateOrderStatus = handleAsync(async (req, res, next) => {
   });
 });
 
+// Tạo đơn hàng chung (từ giỏ hàng hoặc mua ngay)
+const createOrder = handleAsync(async (req, res, next) => {
+  const userId = req.user.id;
+  const { 
+    shipping_address, 
+    payment_method, 
+    note,
+    items // Mảng các sản phẩm: [{ product_variant_id, quantity }]
+  } = req.body;
+
+  if (!items || !Array.isArray(items) || items.length === 0) {
+    return next(createError(400, "Yêu cầu phải có danh sách sản phẩm (items)"));
+  }
+
+  const variantIds = items.map(item => item.product_variant_id);
+  const variants = await ProductVariant.find({ _id: { $in: variantIds } })
+    .populate('product_id', 'product_name')
+    .populate('color_id', 'color_name')
+    .populate('storage_id', 'storage_name');
+
+  if (variants.length !== variantIds.length) {
+    return next(createError(404, "Một hoặc nhiều sản phẩm không tồn tại"));
+  }
+
+  // Map variants to an object for easy lookup
+  const variantMap = variants.reduce((map, variant) => {
+    map[variant._id.toString()] = variant;
+    return map;
+  }, {});
+
+  // Kiểm tra tồn kho và tính toán giá
+  let subtotal = 0;
+  for (const item of items) {
+    const variant = variantMap[item.product_variant_id];
+    if (variant.stock_quantity < item.quantity) {
+      return next(createError(400, `Sản phẩm ${variant.product_id.product_name} không đủ số lượng tồn kho`));
+    }
+    subtotal += variant.price * item.quantity;
+  }
+
+  const shippingFee = calculateShippingFee(shipping_address);
+  const totalAmount = subtotal + shippingFee; // Note: No coupon logic in this generic one yet
+
+  // Tạo order_number thủ công
+  const orderNumber = `ORD${Date.now()}${Math.floor(Math.random() * 1000).toString().padStart(3, '0')}`;
+
+  // Tạo đơn hàng
+  const order = await Order.create({
+    user_id: userId,
+    order_number: orderNumber,
+    shipping_address,
+    payment_method,
+    subtotal,
+    shipping_fee: shippingFee,
+    total_amount: totalAmount,
+    note
+  });
+
+  // Tạo chi tiết đơn hàng
+  const orderDetails = [];
+  for (const item of items) {
+    const variant = variantMap[item.product_variant_id];
+    const orderDetail = await OrderDetail.create({
+      order_id: order._id,
+      product_variant_id: variant._id,
+      product_info: {
+        product_name: `${variant.product_id.product_name} ${variant.color_id.color_name} ${variant.storage_id.storage_name}`,
+        color_name: variant.color_id.color_name,
+        storage_name: variant.storage_id.storage_name,
+        sku: variant.sku,
+        image_url: variant.image_url,
+      },
+      quantity: item.quantity,
+      unit_price: variant.price,
+      total_price: item.quantity * variant.price
+    });
+    orderDetails.push(orderDetail);
+
+    // Cập nhật tồn kho
+    await ProductVariant.findByIdAndUpdate(
+      variant._id,
+      { $inc: { stock_quantity: -item.quantity } }
+    );
+  }
+  
+  const populatedOrder = await Order.findById(order._id)
+    .populate('user_id', 'fullname email phone');
+
+  res.status(201).json({
+    success: true,
+    message: message.ORDER.CREATE_SUCCESS,
+    data: {
+      order: populatedOrder,
+      order_details: orderDetails,
+    }
+  });
+});
+
 export {
   createOrderFromCart,
   createOrderDirect,
@@ -544,5 +640,6 @@ export {
   cancelOrder,
   getAllOrders,
   getOrderById,
-  updateOrderStatus
+  updateOrderStatus,
+  createOrder
 }; 

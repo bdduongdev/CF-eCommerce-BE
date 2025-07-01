@@ -9,6 +9,9 @@ import validate from "../middlewares/validate.js";
 const router = express.Router();
 
 router.get("/", getAllReviews);
-router.post("/", verifyToken, isCustomer, createReview);
+
+router.use(verifyToken, isCustomer);
+
+router.post("/", createReview);
 
 export default router;

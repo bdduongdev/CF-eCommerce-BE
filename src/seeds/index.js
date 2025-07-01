@@ -8,6 +8,7 @@ import seedUsers from "./UserSeeder.js";
 import seedOrders from "./OrderSeeder.js";
 import seedOrderDetails from "./OrderDetailSeeder.js";
 import { seedDiscounts } from "./DiscountSeeder.js";
+import seedReviews from "./ReviewSeeder.js";
 
 dotenv.config();
 
@@ -23,10 +24,11 @@ mongoose
       await seedColors();
       await seedStorages();
       await seedProducts();
-      await seedUsers();
+      // await seedUsers();
       await seedOrders();
       await seedOrderDetails();
       await seedDiscounts();
+      await seedReviews();
 
       console.log("Đã hoàn thành seed dữ liệu!");
       process.exit(0);

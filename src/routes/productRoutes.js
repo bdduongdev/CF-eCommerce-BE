@@ -22,21 +22,21 @@ import path from "path";
 
 const router = express.Router();
 
-router.get("/", getAllProducts);  
+router.get("/", getAllProducts);
 router.get("/search", searchProducts);
 router.get("/group/:slug", getGroupedProductBySlug);
 router.get("/show/:id", getProductById);
 
-router.use(verifyToken);
+router.use(verifyToken, isAdmin);
 
-router.get("/trashed", isAdmin, getTrashedProducts);
-router.post("/create", isAdmin, upload.single('image'), validate(createProductSchema), createProduct);
-router.put("/update/:id", isAdmin, upload.single('image'), validate(updateProductSchema), updateProduct);
-router.patch("/status/:id", isAdmin, validate(updateProductStatusSchema), updateProductStatus);
-router.delete("/delete/:id", isAdmin, deleteProduct);
-router.put("/restore/:id", isAdmin, restoreProduct);
-router.post("/images/:id", isAdmin, upload.array('images', 10), uploadProductImages);
-router.put("/image/:id", isAdmin, upload.single('image'), updateProductMainImage);
-router.delete("/image/:id", isAdmin, validate(deleteProductImageSchema), deleteProductImage);
+router.get("/trashed", getTrashedProducts);
+router.post("/create", validate(createProductSchema), createProduct);
+router.put("/update/:id", validate(updateProductSchema), updateProduct);
+router.patch("/status/:id", validate(updateProductStatusSchema), updateProductStatus);
+router.delete("/delete/:id", deleteProduct);
+router.put("/restore/:id", restoreProduct);
+router.post("/images/:id", upload.array('images', 10), uploadProductImages);
+router.put("/image/:id", upload.single('image'), updateProductMainImage);
+router.delete("/image/:id", validate(deleteProductImageSchema), deleteProductImage);
 
 export default router;
