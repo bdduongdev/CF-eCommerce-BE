@@ -237,13 +237,26 @@ const getUserOrders = handleAsync(async (req, res, next) => {
     .limit(parseInt(limit))
     .populate('coupon_id', 'code discount_value discount_type');
 
+  // ➕ Lấy chi tiết sản phẩm cho từng đơn hàng
+  const ordersWithDetails = await Promise.all(
+    orders.map(async (order) => {
+      const order_details = await OrderDetail.find({ order_id: order._id })
+        .populate('product_variant_id');
+
+      return {
+        ...order.toObject(),
+        order_details
+      };
+    })
+  );
+
   const total = await Order.countDocuments(query);
 
   res.status(200).json({
     success: true,
     message: message.ORDER.GET_LIST_SUCCESS,
     data: {
-      orders,
+      orders: ordersWithDetails,
       pagination: {
         total,
         page: parseInt(page),
@@ -253,6 +266,7 @@ const getUserOrders = handleAsync(async (req, res, next) => {
     }
   });
 });
+
 
 const getOrderDetail = handleAsync(async (req, res, next) => {
   const userId = req.user.id;

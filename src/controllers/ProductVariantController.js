@@ -84,64 +84,88 @@ const getAllProductVariants = handleAsync(async (req, res, next) => {
     page = 1,
     status,
     color,
-    storage
+    storage,
   } = req.query;
 
   const skip = (parseInt(page) - 1) * parseInt(limit);
 
-  // --- Aggregation Pipeline based on ProductVariants ---
   const pipeline = [];
 
-  // Stage 1: Initial match on ProductVariant fields
+  // Match ProductVariant fields
   const matchStage = { is_deleted: false };
+
   if (status) matchStage.status = status;
-  if (minPrice) matchStage.price = { ...matchStage.price, $gte: parseFloat(minPrice) };
-  if (maxPrice) matchStage.price = { ...matchStage.price, $lte: parseFloat(maxPrice) };
-  if (color) matchStage.color_id = new mongoose.Types.ObjectId(color);
-  if (storage) matchStage.storage_id = new mongoose.Types.ObjectId(storage);
-  
+
+  // Price range
+  if (minPrice || maxPrice) {
+    matchStage.price = {};
+    if (minPrice) matchStage.price.$gte = parseFloat(minPrice);
+    if (maxPrice) matchStage.price.$lte = parseFloat(maxPrice);
+  }
+
+  // Multiple color filter
+  if (color) {
+    const colorArray = String(color).split(',').map((id) => new mongoose.Types.ObjectId(id));
+    matchStage.color_id = { $in: colorArray };
+  }
+
+  // Multiple storage filter
+  if (storage) {
+    const storageArray = String(storage).split(',').map((id) => new mongoose.Types.ObjectId(id));
+    matchStage.storage_id = { $in: storageArray };
+  }
+
   pipeline.push({ $match: matchStage });
 
-  // Stage 2: Join with products collection
+  // Join with product
   pipeline.push({
-    $lookup: { from: 'products', localField: 'product_id', foreignField: '_id', as: 'product' }
+    $lookup: {
+      from: 'products',
+      localField: 'product_id',
+      foreignField: '_id',
+      as: 'product',
+    },
   });
   pipeline.push({ $unwind: '$product' });
 
-  // Stage 3: Match on parent product fields
+  // Match product fields
   const productMatchStage = { 'product.is_deleted': false };
+
   if (category) {
     productMatchStage['product.category_id'] = new mongoose.Types.ObjectId(category);
   }
+
   if (search) {
     productMatchStage.$or = [
       { 'product.product_name': { $regex: search, $options: 'i' } },
       { 'product.slug': { $regex: search, $options: 'i' } },
-      { 'sku': { $regex: search, $options: 'i' } }
+      { sku: { $regex: search, $options: 'i' } },
     ];
   }
+
   pipeline.push({ $match: productMatchStage });
-  
-  // --- Execute pipeline for counting total documents ---
-  const countPipeline = [...pipeline, { $count: "total" }];
+
+  // Get total count
+  const countPipeline = [...pipeline, { $count: 'total' }];
   const totalResult = await ProductVariant.aggregate(countPipeline);
   const total = totalResult.length > 0 ? totalResult[0].total : 0;
-  
-  // Stage 4: Sorting
+
+  // Sort
   let sortOptions = {};
   if (sort) {
-    const [field, order] = sort.split(":");
-    sortOptions[field === 'product_name' ? 'product.product_name' : field] = order === "desc" ? -1 : 1;
+    const [field, order] = sort.split(':');
+    sortOptions[field === 'product_name' ? 'product.product_name' : field] =
+      order === 'desc' ? -1 : 1;
   } else {
-    sortOptions = { 'product.created_at': -1, 'price': 1 };
+    sortOptions = { 'product.created_at': -1, price: 1 };
   }
   pipeline.push({ $sort: sortOptions });
 
-  // Stage 5: Pagination
+  // Pagination
   pipeline.push({ $skip: skip });
   pipeline.push({ $limit: parseInt(limit) });
 
-  // Stage 6: Join with other collections for details
+  // Lookup details
   pipeline.push(
     { $lookup: { from: 'productcolors', localField: 'color_id', foreignField: '_id', as: 'color' } },
     { $unwind: { path: '$color', preserveNullAndEmptyArrays: true } },
@@ -149,14 +173,13 @@ const getAllProductVariants = handleAsync(async (req, res, next) => {
     { $unwind: { path: '$storage', preserveNullAndEmptyArrays: true } },
     { $lookup: { from: 'categories', localField: 'product.category_id', foreignField: '_id', as: 'product.category' } },
     { $unwind: { path: '$product.category', preserveNullAndEmptyArrays: true } },
-    // --- Add discount lookup ---
     {
       $lookup: {
         from: 'discountproducts',
         localField: 'product_id',
         foreignField: 'product_id',
-        as: 'product_discounts_link'
-      }
+        as: 'product_discounts_link',
+      },
     },
     {
       $lookup: {
@@ -168,24 +191,24 @@ const getAllProductVariants = handleAsync(async (req, res, next) => {
               $expr: { $in: ['$_id', '$$discount_ids'] },
               is_active: true,
               start_date: { $lte: new Date() },
-              end_date: { $gte: new Date() }
-            }
+              end_date: { $gte: new Date() },
+            },
           },
           {
             $project: {
               discount_type: 1,
               discount_value: 1,
               description: 1,
-              end_date: 1
-            }
-          }
+              end_date: 1,
+            },
+          },
         ],
-        as: 'discounts'
-      }
+        as: 'discounts',
+      },
     }
   );
 
-  // Stage 7: Final Projection to shape the output
+  // Final projection
   pipeline.push({
     $project: {
       _id: 1,
@@ -200,23 +223,21 @@ const getAllProductVariants = handleAsync(async (req, res, next) => {
         product_name: '$product.product_name',
         slug: '$product.slug',
         description: '$product.description',
-        category: '$product.category'
+        category: '$product.category',
       },
       color: 1,
       storage: 1,
-      discounts: 1
-    }
+      discounts: 1,
+    },
   });
 
   const products = await ProductVariant.aggregate(pipeline);
-  // Sử dụng lại processProductsImages nếu cần (import từ ProductController hoặc tách ra utils)
-  // const productsWithFullImageUrls = processProductsImages(req, products);
 
   res.status(200).json({
     success: true,
-    message: "Lấy danh sách biến thể sản phẩm thành công!",
+    message: 'Lấy danh sách biến thể sản phẩm thành công!',
     data: {
-      products, // hoặc productsWithFullImageUrls nếu xử lý ảnh
+      products,
       pagination: {
         total,
         page: parseInt(page),
