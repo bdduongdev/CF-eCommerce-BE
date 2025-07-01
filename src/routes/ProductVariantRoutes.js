@@ -1,11 +1,12 @@
 import express from "express";
 import { verifyToken, isAdmin, isCustomer, isAdminOrCustomer } from "../middlewares/auth.js";
-import { createProductVariant, updateProductVariant, deleteProductVariant, getAllProductVariants } from "../controllers/ProductVariantController.js";
+import { createProductVariant, updateProductVariant, deleteProductVariant, getAllProductVariants, getProductVariantById } from "../controllers/ProductVariantController.js";
 import upload from "../middlewares/upload.js";
 
 const router = express.Router();
 
 router.get("/", getAllProductVariants);
+router.get("/:id", getProductVariantById);
 
 router.use(verifyToken, isAdmin);
 

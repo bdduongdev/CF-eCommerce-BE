@@ -26,19 +26,15 @@ const router = express.Router();
 
 router.use(verifyToken);
 
-router.use(isCustomer);
+router.post('/', isCustomer, validate(createOrderSchema), createOrder);
+router.post('/from-cart', isCustomer, validate(createOrderFromCartSchema), createOrderFromCart);
+router.post('/direct', isCustomer, validate(createOrderDirectSchema), createOrderDirect);
+router.get('/', isCustomer, getUserOrders);
+router.get('/:orderId', isCustomer, getOrderDetail);
+router.patch('/:orderId/cancel', isCustomer, validate(cancelOrderSchema), cancelOrder);
 
-router.post('/', validate(createOrderSchema), createOrder);
-router.post('/from-cart', validate(createOrderFromCartSchema), createOrderFromCart);
-router.post('/direct', validate(createOrderDirectSchema), createOrderDirect);
-router.get('/', getUserOrders);
-router.get('/:orderId', getOrderDetail);
-router.patch('/:orderId/cancel', validate(cancelOrderSchema), cancelOrder);
-
-router.use('/admin', isAdmin);
-
-router.get('/all', validate(getAllOrdersSchema), getAllOrders);
-router.get('/:orderId', validate(getOrderByIdSchema), getOrderById);
-router.patch('/:orderId/status', validate(updateOrderStatusSchema), updateOrderStatus);
+router.get('/admin/all', isAdmin, validate(getAllOrdersSchema), getAllOrders);
+router.get('/admin/:orderId', isAdmin, validate(getOrderByIdSchema), getOrderById);
+router.patch('/admin/:orderId/status', isAdmin, validate(updateOrderStatusSchema), updateOrderStatus);
 
 export default router;
