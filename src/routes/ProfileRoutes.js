@@ -14,7 +14,7 @@ router.use(verifyToken, isAdminOrCustomer);
 
 router.get("/", getProfile);
 
-router.put("/", updateProfile);
+router.put("/:id", updateProfile);
 
 router.put("/password", updatePassword);
 
